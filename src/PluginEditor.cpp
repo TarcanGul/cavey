@@ -6,13 +6,14 @@ class CaveyAudioProcessor; // forward-declare to match include order
 CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
-    setSize(600, 600); // Set the GUI size to 600x600 pixels
+    setSize(INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT);
+    setResizable(true, true);
 
     // Create the parameter area that first be a text box.
-    mainLabel.setText("Welcome to Cavey!", NotificationType::dontSendNotification);
+    mainLabel.setText(MAIN_LABEL_TEXT, NotificationType::dontSendNotification);
     mainLabel.setEditable(false);
 
-    promptEditor.setText("Write your prompt here.", false);
+    promptEditor.setTextToShowWhenEmpty(PROMPT_PLACEHOLDER_TEXT, Colours::grey.withAlpha(.6f));
 
     addAndMakeVisible(&mainLabel);
     addAndMakeVisible(&promptEditor);
@@ -27,8 +28,9 @@ void CaveyAudioProcessorEditor::paint(juce::Graphics& g)
 
 void CaveyAudioProcessorEditor::resized() {
     auto screen = getLocalBounds();
+    auto promptBounds = screen.removeFromBottom(PROMPT_HEIGHT);
     // Divide the screen to four areas (header - main area - text area - footer)
-    mainLabel.setBounds(screen.withSizeKeepingCentre(mainLabel.getFont().getStringWidth("Welcome to Cavey!"), 20));
-    promptEditor.setBounds(screen.removeFromBottom(200));
+    mainLabel.setBounds(screen.withSizeKeepingCentre(mainLabel.getFont().getStringWidth(MAIN_LABEL_TEXT), 20));
+    promptEditor.setBounds(promptBounds.reduced(MARGIN_SMALL));
 }
 
