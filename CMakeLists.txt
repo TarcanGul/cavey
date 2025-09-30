@@ -22,16 +22,16 @@ endif()
 
 # Create the plugin target
 juce_add_plugin(CaveyPlugin
-    COMPANY_NAME "YourCompany"
-    BUNDLE_ID com.yourcompany.Cavey
+    COMPANY_NAME "TarcanGul"
+    BUNDLE_ID com.tarcangul.Cavey
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
     COPY_PLUGIN_AFTER_BUILD TRUE
-    PLUGIN_MANUFACTURER_CODE Your  # 4-char code
-    PLUGIN_CODE HeWo               # 4-char code
+    PLUGIN_MANUFACTURER_CODE Cave  # 4-char code
+    PLUGIN_CODE Cave               # 4-char code
     FORMATS VST3 AU Standalone
     PRODUCT_NAME "Cavey"
 )
