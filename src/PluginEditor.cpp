@@ -15,8 +15,11 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
 
     promptEditor.setTextToShowWhenEmpty(PROMPT_PLACEHOLDER_TEXT, Colours::grey.withAlpha(.6f));
 
+    generateButton.setButtonText(GENERATE_BUTTON_TEXT);
+
     addAndMakeVisible(&mainLabel);
     addAndMakeVisible(&promptEditor);
+    addAndMakeVisible(&generateButton);
 }
 
 CaveyAudioProcessorEditor::~CaveyAudioProcessorEditor() = default;
@@ -29,8 +32,10 @@ void CaveyAudioProcessorEditor::paint(juce::Graphics& g)
 void CaveyAudioProcessorEditor::resized() {
     auto screen = getLocalBounds();
     auto promptBounds = screen.removeFromBottom(PROMPT_HEIGHT);
+    auto buttonBounds = promptBounds.removeFromRight(PROMPT_WIDTH);
     // Divide the screen to four areas (header - main area - text area - footer)
     mainLabel.setBounds(screen.withSizeKeepingCentre(mainLabel.getFont().getStringWidth(MAIN_LABEL_TEXT), 20));
     promptEditor.setBounds(promptBounds.reduced(MARGIN_SMALL));
+    generateButton.setBounds(buttonBounds.reduced(MARGIN_EXTRA_SMALL, MARGIN_SMALL));
 }
 
