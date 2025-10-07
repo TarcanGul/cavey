@@ -25,10 +25,8 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
 
 CaveyAudioProcessorEditor::~CaveyAudioProcessorEditor() {
     generateButton.removeListener(this);
-    if (!parameterKnobs.empty()) {
-        for (auto it = parameterKnobs.begin(); it != parameterKnobs.end(); it++) {
-            delete *it;
-        }
+    for (auto tuple : parameterKnobs) {
+        delete &tuple;
     }
 }
 
@@ -46,10 +44,7 @@ void CaveyAudioProcessorEditor::resized() {
         mainLabel.setVisible(true);
         mainLabel.setBounds(screen.withSizeKeepingCentre(mainLabel.getFont().getStringWidth(MAIN_LABEL_TEXT), 20));
     } else {
-        for (auto it = parameterKnobs.begin(); it != parameterKnobs.end(); it++) {
-            Slider * knob = *it;
-            knob->setBounds(screen.removeFromTop(KNOB_INIT_Y_POS + KNOB_HEIGHT * std::distance(parameterKnobs.begin(), it)));
-        }
+        renderParameterKnobs();
     }
 
     // Divide the screen to four areas (header - main area - text area - footer)
@@ -66,22 +61,32 @@ void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
 void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
     // Generate the knob here.
     if (parameterKnobs.size() < MAX_PARAMETER_AMOUNT) {
-        Slider * slider = new Slider();
+        auto * slider = new Slider();
+        auto * removeButton = new TextButton();
         slider->setSliderStyle(juce::Slider::SliderStyle::Rotary);
         slider->setRange(0, 100, 1);
+        removeButton->setButtonText("Remove");
         addAndMakeVisible(slider);
-        parameterKnobs.push_back(slider);
+        addAndMakeVisible(removeButton);
+        parameterKnobs.emplace_back(std::tuple(slider, removeButton));
         parameterAdded();
     }
 }
 
 void CaveyAudioProcessorEditor::parameterAdded() {
     PRINT("Parameter added");
-    auto screen = getLocalBounds();
-    for (auto it = parameterKnobs.begin(); it != parameterKnobs.end(); it++) {
-        Slider * knob = *it;
-        knob->setBounds(screen.removeFromTop(KNOB_INIT_Y_POS + KNOB_HEIGHT * std::distance(parameterKnobs.begin(), it)));
-    }
+    renderParameterKnobs();
     mainLabel.setVisible(false);
+}
+
+void CaveyAudioProcessorEditor::renderParameterKnobs() const noexcept {
+    auto screen = getLocalBounds();
+    for (size_t i = 0; i < parameterKnobs.size(); ++i) {
+        auto tuple = parameterKnobs[i];
+        Slider * knob = std::get<Slider *>(tuple);
+        Button * removeButton = std::get<Button *>(tuple);
+        knob->setBounds(screen.removeFromTop(KNOB_INIT_Y_POS + KNOB_HEIGHT * i));
+        removeButton->setBounds(screen.removeFromLeft(50) );
+    }
 }
 

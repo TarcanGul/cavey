@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include <vector>
 #include <iterator>
+#include <utility>
 
 #define PRINT(text) std::cout << text << std::endl
 
@@ -19,7 +20,7 @@ static constexpr const char *const MAIN_LABEL_TEXT = "Welcome to Cavey! Start wi
 static constexpr const char *const PROMPT_PLACEHOLDER_TEXT = "Write your prompt here.";
 static constexpr const char *const GENERATE_BUTTON_TEXT = "Generate";
 
-static constexpr const int KNOB_INIT_Y_POS = 100;
+static constexpr const long KNOB_INIT_Y_POS = 100L;
 
 static constexpr const int KNOB_HEIGHT = 10;
 
@@ -36,13 +37,14 @@ public:
 private:
     void buttonClicked(Button * buttonRef) override;
     void whenGenerateButtonClicked();
+    void renderParameterKnobs() const noexcept;
 
     void parameterAdded();
     CaveyAudioProcessor& audioProcessor;
     Label mainLabel;
     TextEditor promptEditor;
     TextButton generateButton;
-    std::vector<Slider *> parameterKnobs = {};
+    std::vector<std::tuple<Slider *, Button *>> parameterKnobs = {};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessorEditor)
 };
