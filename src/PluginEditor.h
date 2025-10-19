@@ -4,6 +4,7 @@
 #include <vector>
 #include <iterator>
 #include <utility>
+#include "components/Parameter.h"
 
 #define PRINT(text) std::cout << text << std::endl
 
@@ -22,7 +23,7 @@ static constexpr const char *const GENERATE_BUTTON_TEXT = "Generate";
 
 static constexpr const long KNOB_INIT_Y_POS = 100L;
 
-static constexpr const int KNOB_HEIGHT = 10;
+static constexpr const long KNOB_HEIGHT = 10;
 
 class CaveyAudioProcessor;
 
@@ -37,17 +38,18 @@ public:
 private:
     void buttonClicked(Button * buttonRef) override;
     void whenGenerateButtonClicked();
-    void whenRemoveParameterButtonClicked(std::tuple<Slider *, Button *> parameterGroup);
+    void whenRemoveParameterButtonClicked(Parameter * parameterGroup);
     void renderParameterKnobs() const noexcept;
 
-    void parameterAdded();
-    std::optional<std::tuple<Slider *, Button *>> getParameterGroup(Button * buttonRef);
+    std::optional<Parameter *> getParameterGroup(Button * buttonRef);
     CaveyAudioProcessor& audioProcessor;
     Label mainLabel;
     TextEditor promptEditor;
     TextButton generateButton;
-    std::vector<std::tuple<Slider *, Button *>> parameterKnobs = {};
+    std::vector<Parameter *> parameterKnobs = {};
 
+    inline void parameterAdded();
+    inline void parameterRemoved();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessorEditor)
 };

@@ -43,6 +43,8 @@ target_sources(CaveyPlugin PRIVATE
     src/PluginProcessor.h
     src/PluginEditor.cpp
     src/PluginEditor.h
+    src/components/Parameter.cpp
+    src/components/Parameter.h
 )
 
 target_compile_features(CaveyPlugin PRIVATE cxx_std_17)
