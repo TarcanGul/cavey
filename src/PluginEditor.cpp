@@ -26,6 +26,8 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
 CaveyAudioProcessorEditor::~CaveyAudioProcessorEditor() {
     generateButton.removeListener(this);
     for (auto tuple : parameterKnobs) {
+        auto removeButton = std::get<Button* >(tuple);
+        removeButton->removeListener(this);
         delete &tuple;
     }
 }
@@ -55,6 +57,12 @@ void CaveyAudioProcessorEditor::resized() {
 void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
     if (buttonRef == &generateButton) {
         whenGenerateButtonClicked();
+        return;
+    }
+
+    std::optional<std::tuple<Slider *, Button *>> maybeParameterTuple = getParameterGroup(buttonRef);
+    if (maybeParameterTuple.has_value()) {
+        whenRemoveParameterButtonClicked(maybeParameterTuple.value());
     }
 }
 
@@ -66,11 +74,31 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
         slider->setSliderStyle(juce::Slider::SliderStyle::Rotary);
         slider->setRange(0, 100, 1);
         removeButton->setButtonText("Remove");
+        removeButton->addListener(this);
         addAndMakeVisible(slider);
         addAndMakeVisible(removeButton);
         parameterKnobs.emplace_back(std::tuple(slider, removeButton));
         parameterAdded();
     }
+}
+
+void CaveyAudioProcessorEditor::whenRemoveParameterButtonClicked(std::tuple<Slider *, Button *> parameterGroup) {
+    Slider * parameter = std::get<Slider *>(parameterGroup);
+    Button * removeButton = std::get<Button *>(parameterGroup);
+    PRINT("remove button clicked");
+    const auto newListHead = std::remove_if(
+            parameterKnobs.begin(),
+            parameterKnobs.end(),
+            [parameter, removeButton](std::tuple<Slider *, Button *> parameterKnob) {
+                return std::get<Slider *>(parameterKnob) == parameter &&
+                std::get<Button *>(parameterKnob) == removeButton;
+            }
+        );
+    removeChildComponent(parameter);
+    removeChildComponent(removeButton);
+    parameterKnobs.erase(newListHead, parameterKnobs.end());
+    delete parameter, delete removeButton;
+    // Have to remove everything related, I think I need to go to the drawing board and design OOP.
 }
 
 void CaveyAudioProcessorEditor::parameterAdded() {
@@ -89,4 +117,16 @@ void CaveyAudioProcessorEditor::renderParameterKnobs() const noexcept {
         removeButton->setBounds(screen.removeFromLeft(50) );
     }
 }
+
+std::optional<std::tuple<Slider *, Button *>> CaveyAudioProcessorEditor::getParameterGroup(Button *buttonRef) {
+    for (auto tuple : parameterKnobs) {
+        Button * removeButton = std::get<Button *>(tuple);
+        if (removeButton == buttonRef)
+            return {tuple};
+    }
+
+    return {};
+}
+
+
 

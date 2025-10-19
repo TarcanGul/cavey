@@ -37,14 +37,17 @@ public:
 private:
     void buttonClicked(Button * buttonRef) override;
     void whenGenerateButtonClicked();
+    void whenRemoveParameterButtonClicked(std::tuple<Slider *, Button *> parameterGroup);
     void renderParameterKnobs() const noexcept;
 
     void parameterAdded();
+    std::optional<std::tuple<Slider *, Button *>> getParameterGroup(Button * buttonRef);
     CaveyAudioProcessor& audioProcessor;
     Label mainLabel;
     TextEditor promptEditor;
     TextButton generateButton;
     std::vector<std::tuple<Slider *, Button *>> parameterKnobs = {};
+
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessorEditor)
 };
