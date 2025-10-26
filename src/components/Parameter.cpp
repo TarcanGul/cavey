@@ -5,19 +5,23 @@
 Parameter::Parameter() {
     slider_ = new Slider();
     removeButton_ = new TextButton();
+    label_ = new Label();
+    label_->setText("unnamed", NotificationType::dontSendNotification);
 
     slider_->setSliderStyle(juce::Slider::SliderStyle::Rotary);
     slider_->setRange(0, 100, 1);
 
-    removeButton_->setButtonText("Remove");
+    removeButton_->setButtonText("Remove Parameter");
 
     addAndMakeVisible(slider_);
+    addAndMakeVisible(label_);
     addAndMakeVisible(removeButton_);
 }
 
 Parameter::~Parameter() {
     delete slider_;
     delete removeButton_;
+    delete label_;
 }
 
 Slider *Parameter::getSlider() {
@@ -34,7 +38,11 @@ void Parameter::setRemoveButtonListener(Button::Listener * listener) {
 
 void Parameter::resized() {
     auto componentBounds = getLocalBounds();
+    label_->setBounds(componentBounds.removeFromLeft(LABEL_WIDTH));
     slider_->setBounds(componentBounds);
-    removeButton_->setBounds(componentBounds.removeFromLeft(50) );
+    removeButton_->setBounds(componentBounds.removeFromRight(REMOVE_BUTTON_WIDTH) );
 }
 
+void Parameter::setLabel(juce::String label) {
+    label_->setText(label, NotificationType::dontSendNotification);
+}

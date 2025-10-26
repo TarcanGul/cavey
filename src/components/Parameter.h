@@ -19,8 +19,13 @@ public:
 
     Slider * getSlider();
     Button * getRemoveButton();
+    void setLabel(String label);
     void setRemoveButtonListener(Button::Listener *listener);
 private:
+    static constexpr int REMOVE_BUTTON_WIDTH = 100;
+    static constexpr int LABEL_WIDTH = 100;
+
+    Label * label_;
     Slider * slider_;
     Button * removeButton_;
 };

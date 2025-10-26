@@ -71,6 +71,7 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
         parameter->setRemoveButtonListener(this);
         parameterKnobs.emplace_back(parameter);
         addAndMakeVisible(parameter);
+        parameter->setLabel("New Parameter");
         parameterAdded();
     }
 }
@@ -109,8 +110,8 @@ inline void CaveyAudioProcessorEditor::parameterRemoved() {
 void CaveyAudioProcessorEditor::renderParameterKnobs() const noexcept {
     auto screen = getLocalBounds();
     for (size_t i = 0; i < parameterKnobs.size(); ++i) {
-        auto tuple = parameterKnobs[i];
-        tuple->setBounds(screen.removeFromTop(KNOB_INIT_Y_POS + KNOB_HEIGHT * i));
+        auto parameter = parameterKnobs[i];
+        parameter->setBounds(screen.removeFromTop(KNOB_INIT_Y_POS + KNOB_HEIGHT * i));
     }
 }
 
