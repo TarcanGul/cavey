@@ -73,6 +73,11 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
         addAndMakeVisible(parameter);
         parameter->setLabel("New Parameter");
         parameterAdded();
+
+        // Get text from the editor
+        auto const& inputPrompt = promptEditor.getText();
+        PRINT(inputPrompt);
+        // Call into llama here with the prompt.
     }
 }
 
