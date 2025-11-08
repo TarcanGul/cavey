@@ -7,10 +7,13 @@
 
 #endif //CAVEYPLUGIN_LLMCONTROLLER_H
 
+#include <JuceHeader.h>
 
 
 class LLMController {
 private:
+    const String OLLAMA_HOST = "localhost";
+    const String OLLAMA_PORT = "11434";
 public:
     explicit LLMController();
 };

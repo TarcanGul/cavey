@@ -17,5 +17,9 @@
  * Spike parts:
  * - What to actually generate to make changes is sound
  * - The system prompt
+ *
+ * Use Boost.Asio
  */
-LLMController::LLMController() {}
+LLMController::LLMController() {
+
+}
