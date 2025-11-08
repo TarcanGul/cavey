@@ -12,8 +12,11 @@
 
 class LLMController {
 private:
+    beast::tcp_stream stream;
     const String OLLAMA_HOST = "localhost";
     const String OLLAMA_PORT = "11434";
 public:
     explicit LLMController();
+    ~LLMController();
+    void sendPrompt(String const& prompt)
 };

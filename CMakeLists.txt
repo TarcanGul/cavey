@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project(CaveyPlugin VERSION 0.1.0)
 
-# Provide two ways to get JUCE: local path or FetchContent.
-# - Set JUCE_SOURCE_DIR=/path/to/JUCE to use a local checkout.
-# - Otherwise, FetchContent will download JUCE from GitHub.
+# Dependencies
 
 if(DEFINED JUCE_SOURCE_DIR AND EXISTS "${JUCE_SOURCE_DIR}/CMakeLists.txt")
     message(STATUS "Using JUCE from local path: ${JUCE_SOURCE_DIR}")
@@ -19,6 +20,8 @@ else()
     )
     FetchContent_MakeAvailable(juce)
 endif()
+
+find_package(Boost 1.89 REQUIRED)
 
 # Create the plugin target
 juce_add_plugin(CaveyPlugin
