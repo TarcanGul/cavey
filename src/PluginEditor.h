@@ -27,7 +27,7 @@ static constexpr const long KNOB_HEIGHT = 10;
 
 class CaveyAudioProcessor;
 
-class CaveyAudioProcessorEditor : public juce::AudioProcessorEditor, public juce::Button::Listener {
+class CaveyAudioProcessorEditor : public juce::AudioProcessorEditor, public juce::Button::Listener, private juce::Slider::Listener  {
 public:
     explicit CaveyAudioProcessorEditor(CaveyAudioProcessor&);
     ~CaveyAudioProcessorEditor() override;
@@ -40,6 +40,8 @@ private:
     void whenGenerateButtonClicked();
     void whenRemoveParameterButtonClicked(Parameter * parameterGroup);
     void renderParameterKnobs() const noexcept;
+
+    void sliderValueChanged(juce::Slider * slider) override;
 
     std::optional<Parameter *> getParameterGroup(Button * buttonRef);
     CaveyAudioProcessor& audioProcessor;

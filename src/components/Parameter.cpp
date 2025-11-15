@@ -2,7 +2,7 @@
 // Created by Tarcan Gul on 10/19/25.
 //
 #include "Parameter.h"
-Parameter::Parameter() {
+Parameter::Parameter(juce::String name) {
     slider_ = new Slider();
     removeButton_ = new TextButton();
     label_ = new Label();
@@ -10,6 +10,7 @@ Parameter::Parameter() {
 
     slider_->setSliderStyle(juce::Slider::SliderStyle::Rotary);
     slider_->setRange(0, 100, 1);
+    slider_->setName(name);
 
     removeButton_->setButtonText("Remove Parameter");
 

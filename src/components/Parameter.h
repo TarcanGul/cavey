@@ -13,7 +13,7 @@
 class Parameter : public juce::Component {
 public:
     // Location to render
-    Parameter();
+    Parameter(juce::String name);
     ~Parameter() override;
     void resized() override;
 

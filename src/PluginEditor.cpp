@@ -67,18 +67,28 @@ void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
 void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
     // Generate the knob here.
     if (parameterKnobs.size() < MAX_PARAMETER_AMOUNT) {
-        auto * parameter = new Parameter();
+        // TODO: Get the name from user somehow?
+        auto * parameter = new Parameter("Gain");
         parameter->setRemoveButtonListener(this);
         parameterKnobs.emplace_back(parameter);
         addAndMakeVisible(parameter);
-        parameter->setLabel("New Parameter");
+        parameter->setLabel("Gain");
         parameterAdded();
 
         // Get text from the editor
         auto const& inputPrompt = promptEditor.getText();
         PRINT(inputPrompt);
         // Call into llama here with the prompt.
+
+        // Generate the parameter
+        audioProcessor.addBackendParameter( "Gain");
     }
+}
+
+void CaveyAudioProcessorEditor::sliderValueChanged(juce::Slider *slider) {
+    // We have to set the processor value as that
+    PRINT(slider->getValue());
+    audioProcessor.setBackendParameterValue(slider->getName(), slider->getValue() / 100);
 }
 
 void CaveyAudioProcessorEditor::whenRemoveParameterButtonClicked(Parameter * parameterGroup) {
