@@ -73,6 +73,7 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
         parameterKnobs.emplace_back(parameter);
         addAndMakeVisible(parameter);
         parameter->setLabel("Gain");
+        parameter->getSlider()->addListener(this);
         parameterAdded();
 
         // Get text from the editor
