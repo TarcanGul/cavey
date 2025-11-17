@@ -45,11 +45,9 @@ juce_generate_juce_header(CaveyPlugin)
 
 target_sources(CaveyPlugin PRIVATE
     src/PluginProcessor.cpp
-    src/PluginProcessor.h
     src/PluginEditor.cpp
-    src/PluginEditor.h
+    src/types/BackendParameter.cpp
     src/components/Parameter.cpp
-    src/components/Parameter.h
 )
 
 target_compile_features(CaveyPlugin PRIVATE cxx_std_17)

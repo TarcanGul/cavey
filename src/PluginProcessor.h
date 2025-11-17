@@ -1,6 +1,9 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "components/Parameter.h"
+#include "types/CaveyTypes.h"
+#include "types/BackendParameter.h"
 #include <stdexcept>
 
 class CaveyAudioProcessor : public juce::AudioProcessor {
@@ -40,11 +43,11 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
-    void addBackendParameter(juce::String parameterName);
-    float getBackendParameterValue(juce::String parameterName);
+    void addBackendParameter(const juce::String& parameterName, std::map<BaseEffect, float>);
+
     void setBackendParameterValue(juce::String parameterName, float value);
 private:
-    std::map<juce::String, juce::AudioParameterFloat *> parameters;
+    std::map<juce::String, BackendParameter *> parameters;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessor)
 };

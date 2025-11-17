@@ -1,4 +1,6 @@
 #include "PluginProcessor.h"
+
+#include <utility>
 #include "PluginEditor.h"
 
 CaveyAudioProcessor::CaveyAudioProcessor()
@@ -16,21 +18,15 @@ void CaveyAudioProcessor::prepareToPlay(double, int) {}
 
 void CaveyAudioProcessor::releaseResources() {}
 
-void CaveyAudioProcessor::addBackendParameter(juce::String parameterName) {
+void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName, std::map<BaseEffect, float> coefficients) {
     // TODO: do parameter id yourself
-    juce::AudioParameterFloat * newBackendParameter = new juce::AudioParameterFloat(parameterName, parameterName, 0.0f, 1.0f, 0.8f);
+    auto * newBackendParameterValue = new juce::AudioParameterFloat(parameterName, parameterName, 0.0f, 1.0f, 0.8f);
+    auto * newBackendParameter = new BackendParameter();
+    newBackendParameter->setName(parameterName);
+    newBackendParameter->setParameterValue(newBackendParameterValue);
+    newBackendParameter->setCharacteristicCoefficients(std::move(coefficients));
     parameters.insert({ parameterName, newBackendParameter } );
-    addParameter(newBackendParameter);
-}
-
-float CaveyAudioProcessor::getBackendParameterValue(juce::String parameterName) {
-    juce::AudioParameterFloat * parameter = parameters.at(parameterName);
-    if (parameter == nullptr) {
-        PRINT(parameterName + " cannot be found in the parameters map!");
-        throw std::invalid_argument(parameterName.toStdString() + " cannot be found in the parameters map!");
-    }
-
-    return parameter->get();
+    addParameter(newBackendParameterValue);
 }
 
 void CaveyAudioProcessor::setBackendParameterValue(juce::String parameterName, float value) {
@@ -39,7 +35,7 @@ void CaveyAudioProcessor::setBackendParameterValue(juce::String parameterName, f
         PRINT(parameterName + " cannot be found in the parameters map!");
         throw std::invalid_argument(parameterName.toStdString() + " cannot be found in the parameters map!");
     }
-    *parameter = value;
+    *parameter->getParameterValue() = value;
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -66,16 +62,18 @@ bool CaveyAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) con
 
 void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
-//    juce::ScopedNoDenormals noDenormals;
-//    auto totalNumInputChannels  = getTotalNumInputChannels();
-//    auto totalNumOutputChannels = getTotalNumOutputChannels();
-//
-//    // Clear any output channels that don't have input data
-//    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-//        buffer.clear(i, 0, buffer.getNumSamples());
-// TODO: JUST ASSUME gain for now, have to get the name or the type of the parameter.
-    if (parameters.size() > 0) {
-        buffer.applyGain(*parameters.at("Gain"));
+    for (const auto& parameterValue : parameters) {
+        // Map parameter value (slider value) to separate functions for the base effect.
+        // Getting the slider value here
+        // How to get the associated value here.
+        // Another component, maybe map.
+        const juce::String parameterName = parameterValue.first;
+        BackendParameter * parameter = parameterValue.second;
+
+        // We have to do this for every effect type.
+        float gainValue = parameter->getBaseEffectValue(BaseEffect::VOLUME);
+        // Get values that should change to using parameter name
+        buffer.applyGain(gainValue);
     }
 }
 
