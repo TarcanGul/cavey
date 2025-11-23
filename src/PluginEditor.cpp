@@ -82,8 +82,8 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
 
         // Generate the parameter
         audioProcessor.addBackendParameter( "Gain", {
-                {BaseEffect::VOLUME, 0.4f },
-                {BaseEffect::PITCH, 0.6f }
+                {BaseEffect::VOLUME, 0.2f },
+                {BaseEffect::PITCH, 0.8f }
         });
     }
 }

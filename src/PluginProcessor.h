@@ -45,7 +45,7 @@ public:
 
     void addBackendParameter(const juce::String& parameterName, std::map<BaseEffect, float>);
 
-    void setBackendParameterValue(juce::String parameterName, float value);
+    void setBackendParameterValue(const juce::String& parameterName, float value);
 private:
     std::map<juce::String, BackendParameter *> parameters;
 

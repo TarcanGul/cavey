@@ -7,18 +7,26 @@
 #include <JuceHeader.h>
 #include "CaveyTypes.h"
 
+/**
+ * The actual parameter that determines the functionality
+ */
 class BackendParameter {
 public:
-    BackendParameter() = default;
+    explicit BackendParameter(juce::AudioParameterFloat * parameterValue);
+    ~BackendParameter();
     juce::String getName();
     juce::AudioParameterFloat * getParameterValue();
 
     void setName(juce::String name);
-    void setParameterValue(juce::AudioParameterFloat *  parameterValue);
     void setCharacteristicCoefficients(std::map<BaseEffect, float> coefficients);
 
-    float getBaseEffectValue(BaseEffect effect);
+    std::optional<float> getBaseEffectValue(BaseEffect effect);
 private:
+    void calculateRanges();
+
+    std::pair<float, float> getVolumeRange(float actualValue);
+    std::pair<float, float> getPitchRange(float actualValue);
+
     juce::String name;
     juce::AudioParameterFloat * parameterValue;
     std::map<BaseEffect, float> characteristicCoefficients = {
@@ -29,4 +37,6 @@ private:
             {BaseEffect::SUSTAIN, 0.0f},
             {BaseEffect::RELEASE, 0.0f},
     };
+
+    std::map<BaseEffect, std::pair<float, float>> baseEffectRanges = {};
 };

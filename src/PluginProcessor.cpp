@@ -2,6 +2,7 @@
 
 #include <utility>
 #include "PluginEditor.h"
+#include <cmath>
 
 CaveyAudioProcessor::CaveyAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -21,15 +22,14 @@ void CaveyAudioProcessor::releaseResources() {}
 void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName, std::map<BaseEffect, float> coefficients) {
     // TODO: do parameter id yourself
     auto * newBackendParameterValue = new juce::AudioParameterFloat(parameterName, parameterName, 0.0f, 1.0f, 0.8f);
-    auto * newBackendParameter = new BackendParameter();
+    auto * newBackendParameter = new BackendParameter(newBackendParameterValue);
     newBackendParameter->setName(parameterName);
-    newBackendParameter->setParameterValue(newBackendParameterValue);
     newBackendParameter->setCharacteristicCoefficients(std::move(coefficients));
     parameters.insert({ parameterName, newBackendParameter } );
     addParameter(newBackendParameterValue);
 }
 
-void CaveyAudioProcessor::setBackendParameterValue(juce::String parameterName, float value) {
+void CaveyAudioProcessor::setBackendParameterValue(const juce::String& parameterName, float value) {
     auto parameter = parameters.at(parameterName);
     if (parameter == nullptr) {
         PRINT(parameterName + " cannot be found in the parameters map!");
@@ -63,17 +63,49 @@ bool CaveyAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) con
 void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     for (const auto& parameterValue : parameters) {
-        // Map parameter value (slider value) to separate functions for the base effect.
-        // Getting the slider value here
-        // How to get the associated value here.
-        // Another component, maybe map.
         const juce::String parameterName = parameterValue.first;
         BackendParameter * parameter = parameterValue.second;
 
-        // We have to do this for every effect type.
-        float gainValue = parameter->getBaseEffectValue(BaseEffect::VOLUME);
-        // Get values that should change to using parameter name
-        buffer.applyGain(gainValue);
+        std::optional<float> gainValue = parameter->getBaseEffectValue(BaseEffect::VOLUME);
+        if (gainValue.has_value()) {
+            buffer.applyGain(gainValue.value());
+        }
+
+        std::optional<float> pitchValue = parameter->getBaseEffectValue(BaseEffect::PITCH);
+        if (pitchValue.has_value()) {
+            const int numChannels = buffer.getNumChannels();
+            const int numSamples  = buffer.getNumSamples();
+            if (numSamples > 0) {
+                // Interpret pitchValue as semitones, convert to playback rate ratio
+                const float semitones = pitchValue.value();
+                const float ratio = std::pow(2.0f, semitones / 12.0f);
+
+                // Copy input to a temp buffer for safe in-place processing
+                juce::AudioBuffer<float> source(numChannels, numSamples);
+                for (int ch = 0; ch < numChannels; ++ch)
+                    source.copyFrom(ch, 0, buffer, ch, 0, numSamples);
+
+                for (int ch = 0; ch < numChannels; ++ch) {
+                    float readPos = 0.0f;
+                    for (int n = 0; n < numSamples; ++n) {
+                        const int i0 = static_cast<int>(readPos);
+                        const int i1 = (i0 + 1) % numSamples; // wrap for simple continuity
+                        const float frac = readPos - static_cast<float>(i0);
+
+                        const float s0 = source.getSample(ch, i0);
+                        const float s1 = source.getSample(ch, i1);
+                        const float out = s0 + (s1 - s0) * frac; // linear interpolation
+
+                        buffer.setSample(ch, n, out);
+
+                        readPos += ratio;
+                        // wrap to stay within the source buffer bounds
+                        while (readPos >= static_cast<float>(numSamples))
+                            readPos -= static_cast<float>(numSamples);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -99,4 +131,3 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new CaveyAudioProcessor();
 }
-

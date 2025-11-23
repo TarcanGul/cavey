@@ -9,7 +9,7 @@
 enum class BaseEffect {
     VOLUME,
     PITCH,
-    ATTACK,
+    ATTACK, // TODO: implement these later
     DECAY,
     SUSTAIN,
     RELEASE
