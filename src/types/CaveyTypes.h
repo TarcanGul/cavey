@@ -8,8 +8,8 @@
 
 enum class BaseEffect {
     VOLUME,
-    PITCH,
-    ATTACK, // TODO: implement these later
+    PITCH, // TODO: implement later
+    ATTACK,
     DECAY,
     SUSTAIN,
     RELEASE

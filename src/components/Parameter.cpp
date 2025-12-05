@@ -10,6 +10,7 @@ Parameter::Parameter(juce::String name) {
 
     slider_->setSliderStyle(juce::Slider::SliderStyle::Rotary);
     slider_->setRange(0, 100, 1);
+    slider_->setValue(0);
     slider_->setName(name);
 
     removeButton_->setButtonText("Remove Parameter");

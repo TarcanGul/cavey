@@ -20,8 +20,7 @@ void CaveyAudioProcessor::prepareToPlay(double, int) {}
 void CaveyAudioProcessor::releaseResources() {}
 
 void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName, std::map<BaseEffect, float> coefficients) {
-    // TODO: do parameter id yourself
-    auto * newBackendParameterValue = new juce::AudioParameterFloat(parameterName, parameterName, 0.0f, 1.0f, 0.8f);
+    auto * newBackendParameterValue = new juce::AudioParameterFloat(parameterName, parameterName, 0.0f, 1.0f, 0.0f);
     auto * newBackendParameter = new BackendParameter(newBackendParameterValue);
     newBackendParameter->setName(parameterName);
     newBackendParameter->setCharacteristicCoefficients(std::move(coefficients));
@@ -35,7 +34,7 @@ void CaveyAudioProcessor::setBackendParameterValue(const juce::String& parameter
         PRINT(parameterName + " cannot be found in the parameters map!");
         throw std::invalid_argument(parameterName.toStdString() + " cannot be found in the parameters map!");
     }
-    *parameter->getParameterValue() = value;
+    parameter->setParameterValue(value);
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -69,43 +68,43 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
         std::optional<float> gainValue = parameter->getBaseEffectValue(BaseEffect::VOLUME);
         if (gainValue.has_value()) {
             buffer.applyGain(gainValue.value());
+        } else {
+            buffer.applyGain(1.0);
         }
 
         std::optional<float> pitchValue = parameter->getBaseEffectValue(BaseEffect::PITCH);
         if (pitchValue.has_value()) {
-            const int numChannels = buffer.getNumChannels();
-            const int numSamples  = buffer.getNumSamples();
-            if (numSamples > 0) {
-                // Interpret pitchValue as semitones, convert to playback rate ratio
-                const float semitones = pitchValue.value();
-                const float ratio = std::pow(2.0f, semitones / 12.0f);
-
-                // Copy input to a temp buffer for safe in-place processing
-                juce::AudioBuffer<float> source(numChannels, numSamples);
-                for (int ch = 0; ch < numChannels; ++ch)
-                    source.copyFrom(ch, 0, buffer, ch, 0, numSamples);
-
-                for (int ch = 0; ch < numChannels; ++ch) {
-                    float readPos = 0.0f;
-                    for (int n = 0; n < numSamples; ++n) {
-                        const int i0 = static_cast<int>(readPos);
-                        const int i1 = (i0 + 1) % numSamples; // wrap for simple continuity
-                        const float frac = readPos - static_cast<float>(i0);
-
-                        const float s0 = source.getSample(ch, i0);
-                        const float s1 = source.getSample(ch, i1);
-                        const float out = s0 + (s1 - s0) * frac; // linear interpolation
-
-                        buffer.setSample(ch, n, out);
-
-                        readPos += ratio;
-                        // wrap to stay within the source buffer bounds
-                        while (readPos >= static_cast<float>(numSamples))
-                            readPos -= static_cast<float>(numSamples);
-                    }
-                }
-            }
+            // Do nothing for now, implement later
         }
+
+        juce::ADSR::Parameters adsrParameters;
+
+        std::optional<float> attackValue = parameter->getBaseEffectValue(BaseEffect::ATTACK);
+        if (attackValue.has_value()) {
+            adsrParameters.attack = attackValue.value();
+        }
+
+        std::optional<float> decayValue = parameter->getBaseEffectValue(BaseEffect::DECAY);
+        if (decayValue.has_value()) {
+            adsrParameters.decay = decayValue.value();
+        }
+
+        std::optional<float> sustainValue = parameter->getBaseEffectValue(BaseEffect::SUSTAIN);
+        if (sustainValue.has_value()) {
+            adsrParameters.sustain = sustainValue.value();
+        }
+
+        std::optional<float> releaseValue = parameter->getBaseEffectValue(BaseEffect::RELEASE);
+        if (releaseValue.has_value()) {
+            adsrParameters.release = releaseValue.value();
+        }
+
+        juce::ADSR adsrEnvelope;
+        adsrEnvelope.reset();
+        adsrEnvelope.setSampleRate(getSampleRate());
+        adsrEnvelope.setParameters(adsrParameters);
+        adsrEnvelope.noteOn();
+        adsrEnvelope.applyEnvelopeToBuffer(buffer, 0, buffer.getNumSamples());
     }
 }
 

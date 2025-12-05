@@ -16,16 +16,23 @@ public:
     ~BackendParameter();
     juce::String getName();
     juce::AudioParameterFloat * getParameterValue();
+    void setParameterValue(float value);
 
     void setName(juce::String name);
     void setCharacteristicCoefficients(std::map<BaseEffect, float> coefficients);
 
     std::optional<float> getBaseEffectValue(BaseEffect effect);
 private:
+    constexpr static float EPSILON = 0.00000001f;
+
     void calculateRanges();
 
-    std::pair<float, float> getVolumeRange(float actualValue);
-    std::pair<float, float> getPitchRange(float actualValue);
+    static std::pair<float, float> getVolumeRange(float coefficient);
+    static std::pair<float, float> getPitchRange(float coefficient);
+    static std::pair<float, float> getAttackRange(float coefficient);
+    static std::pair<float, float> getDecayRange(float coefficient);
+    static std::pair<float, float> getSustainRange(float coefficient);
+    static std::pair<float, float> getReleaseRange(float coefficient);
 
     juce::String name;
     juce::AudioParameterFloat * parameterValue;
@@ -39,4 +46,6 @@ private:
     };
 
     std::map<BaseEffect, std::pair<float, float>> baseEffectRanges = {};
+
+
 };
