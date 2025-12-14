@@ -8,9 +8,8 @@
 
 enum class BaseEffect {
     VOLUME,
-    PITCH, // TODO: implement later
-    ATTACK,
-    DECAY,
-    SUSTAIN,
-    RELEASE
+};
+
+inline const std::map<BaseEffect, juce::String> BASE_EFFECT_STRINGS = {
+        {BaseEffect::VOLUME, "VOLUME"},
 };

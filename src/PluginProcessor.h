@@ -48,6 +48,9 @@ public:
     void setBackendParameterValue(const juce::String& parameterName, float value);
 private:
     std::map<juce::String, BackendParameter *> parameters;
+    juce::ADSR adsrEnvelope;
+    juce::ADSR::Parameters adsrParameters;
+    // std::unique_ptr<juce::FileLogger> fileLogger;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessor)
 };

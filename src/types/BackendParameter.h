@@ -28,24 +28,12 @@ private:
     void calculateRanges();
 
     static std::pair<float, float> getVolumeRange(float coefficient);
-    static std::pair<float, float> getPitchRange(float coefficient);
-    static std::pair<float, float> getAttackRange(float coefficient);
-    static std::pair<float, float> getDecayRange(float coefficient);
-    static std::pair<float, float> getSustainRange(float coefficient);
-    static std::pair<float, float> getReleaseRange(float coefficient);
 
     juce::String name;
     juce::AudioParameterFloat * parameterValue;
     std::map<BaseEffect, float> characteristicCoefficients = {
-            {BaseEffect::VOLUME, 0.0f},
-            {BaseEffect::PITCH, 0.0f},
-            {BaseEffect::ATTACK, 0.0f},
-            {BaseEffect::DECAY, 0.0f},
-            {BaseEffect::SUSTAIN, 0.0f},
-            {BaseEffect::RELEASE, 0.0f},
+            {BaseEffect::VOLUME, 0.0f}
     };
 
     std::map<BaseEffect, std::pair<float, float>> baseEffectRanges = {};
-
-
 };

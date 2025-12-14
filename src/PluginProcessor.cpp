@@ -3,6 +3,7 @@
 #include <utility>
 #include "PluginEditor.h"
 #include <cmath>
+#include <format>
 
 CaveyAudioProcessor::CaveyAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -11,11 +12,17 @@ CaveyAudioProcessor::CaveyAudioProcessor()
         .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 #endif
 {
+    juce::File logFile("~/logs.txt");
+    // fileLogger = std::make_unique<juce::FileLogger>(std::move(logFile), juce::String("Logs are active"));
 }
 
 CaveyAudioProcessor::~CaveyAudioProcessor() = default;
 
-void CaveyAudioProcessor::prepareToPlay(double, int) {}
+void CaveyAudioProcessor::prepareToPlay(double, int) {
+    PRINT("Prepare to play called");
+    adsrEnvelope.setSampleRate(getSampleRate());
+    adsrEnvelope.setParameters(adsrParameters);
+}
 
 void CaveyAudioProcessor::releaseResources() {}
 
@@ -67,44 +74,12 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
 
         std::optional<float> gainValue = parameter->getBaseEffectValue(BaseEffect::VOLUME);
         if (gainValue.has_value()) {
+            juce::String log;
             buffer.applyGain(gainValue.value());
         } else {
+            juce::String log;
             buffer.applyGain(1.0);
         }
-
-        std::optional<float> pitchValue = parameter->getBaseEffectValue(BaseEffect::PITCH);
-        if (pitchValue.has_value()) {
-            // Do nothing for now, implement later
-        }
-
-        juce::ADSR::Parameters adsrParameters;
-
-        std::optional<float> attackValue = parameter->getBaseEffectValue(BaseEffect::ATTACK);
-        if (attackValue.has_value()) {
-            adsrParameters.attack = attackValue.value();
-        }
-
-        std::optional<float> decayValue = parameter->getBaseEffectValue(BaseEffect::DECAY);
-        if (decayValue.has_value()) {
-            adsrParameters.decay = decayValue.value();
-        }
-
-        std::optional<float> sustainValue = parameter->getBaseEffectValue(BaseEffect::SUSTAIN);
-        if (sustainValue.has_value()) {
-            adsrParameters.sustain = sustainValue.value();
-        }
-
-        std::optional<float> releaseValue = parameter->getBaseEffectValue(BaseEffect::RELEASE);
-        if (releaseValue.has_value()) {
-            adsrParameters.release = releaseValue.value();
-        }
-
-        juce::ADSR adsrEnvelope;
-        adsrEnvelope.reset();
-        adsrEnvelope.setSampleRate(getSampleRate());
-        adsrEnvelope.setParameters(adsrParameters);
-        adsrEnvelope.noteOn();
-        adsrEnvelope.applyEnvelopeToBuffer(buffer, 0, buffer.getNumSamples());
     }
 }
 
