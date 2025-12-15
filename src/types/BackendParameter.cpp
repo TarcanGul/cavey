@@ -21,12 +21,12 @@ void BackendParameter::setCharacteristicCoefficients(std::map<BaseEffect, float>
 
 /**
  * This method will give the value for that effect given the current parameter value and coefficients.
+ * Currently assumes first value is max,
  * @param effect
  * @return
  */
 std::optional<float> BackendParameter::getBaseEffectValue(BaseEffect effect) {
     juce::String log1;
-    // fileLogger->logMessage(log1 << "Calculating: " << BASE_EFFECT_STRINGS.at(effect));
     if (!baseEffectRanges.contains(effect)) {
         return {};
     }
@@ -34,21 +34,12 @@ std::optional<float> BackendParameter::getBaseEffectValue(BaseEffect effect) {
     float firstValue = baseEffectRanges[effect].first;
     float secondValue = baseEffectRanges[effect].second;
 
-    juce::String log2;
-    // fileLogger->logMessage(log2 << "First value is: " << firstValue << '\n');
-    // fileLogger->logMessage(log2 << "Second value is: " << secondValue << '\n');
-
     // If values are equal
     if (firstValue <= secondValue + EPSILON && firstValue >= secondValue - EPSILON) {
-        juce::String log3;
-        // fileLogger->logMessage("approximately equal");
         return firstValue;
     }
 
-    float max = std::max(firstValue, secondValue);
-    float min = std::min(firstValue, secondValue);
-
-    return min + ((max - min) * parameterValue->get());
+    return firstValue - ((firstValue - secondValue) * parameterValue->get());
 }
 
 juce::String BackendParameter::getName() {
@@ -66,6 +57,7 @@ BackendParameter::~BackendParameter() {
 
 void BackendParameter::calculateRanges() {
     baseEffectRanges[BaseEffect::VOLUME] = getVolumeRange(characteristicCoefficients[BaseEffect::VOLUME]);
+    baseEffectRanges[BaseEffect::LOW_PASS] = getLowPassRange(characteristicCoefficients[BaseEffect::LOW_PASS]);
 }
 
 // coefficient range = 0-1
@@ -75,6 +67,13 @@ std::pair<float, float> BackendParameter::getVolumeRange(float coefficient) {
     return {1.0 - coefficient, 1.0};
 }
 
+// This is going to give Hz.
+std::pair<float, float> BackendParameter::getLowPassRange(float coefficient) {
+    // 0 -> {20000 , 20000}
+    // 1 -> {20000, 1000}
+    return {20000, 20000 - (19900 * coefficient)};
+}
+
 void BackendParameter::setParameterValue(float value) {
-    * parameterValue = value;
+     * parameterValue = value;
 }

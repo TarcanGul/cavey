@@ -28,11 +28,13 @@ private:
     void calculateRanges();
 
     static std::pair<float, float> getVolumeRange(float coefficient);
+    static std::pair<float, float> getLowPassRange(float coefficient);
 
     juce::String name;
     juce::AudioParameterFloat * parameterValue;
     std::map<BaseEffect, float> characteristicCoefficients = {
-            {BaseEffect::VOLUME, 0.0f}
+            {BaseEffect::VOLUME, 0.0f},
+            {BaseEffect::LOW_PASS, 0.0f}
     };
 
     std::map<BaseEffect, std::pair<float, float>> baseEffectRanges = {};

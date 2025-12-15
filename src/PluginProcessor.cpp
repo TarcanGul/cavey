@@ -3,7 +3,6 @@
 #include <utility>
 #include "PluginEditor.h"
 #include <cmath>
-#include <format>
 
 CaveyAudioProcessor::CaveyAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -11,17 +10,25 @@ CaveyAudioProcessor::CaveyAudioProcessor()
         .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
         .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 #endif
-{
-    juce::File logFile("~/logs.txt");
-    // fileLogger = std::make_unique<juce::FileLogger>(std::move(logFile), juce::String("Logs are active"));
-}
+{}
 
 CaveyAudioProcessor::~CaveyAudioProcessor() = default;
 
-void CaveyAudioProcessor::prepareToPlay(double, int) {
+void CaveyAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     PRINT("Prepare to play called");
-    adsrEnvelope.setSampleRate(getSampleRate());
-    adsrEnvelope.setParameters(adsrParameters);
+
+    juce::dsp::ProcessSpec spec = {
+            .sampleRate = sampleRate,
+            .maximumBlockSize = static_cast<unsigned int>(samplesPerBlock),
+            .numChannels = static_cast<unsigned int>(getTotalNumOutputChannels())
+    };
+
+    auto& filter = processorChain.get<filterIndex>();
+    filter.setMode(juce::dsp::LadderFilterMode::LPF24);
+    filter.setCutoffFrequencyHz(20000);
+    filter.setResonance (0.7f);
+
+    processorChain.prepare(spec);
 }
 
 void CaveyAudioProcessor::releaseResources() {}
@@ -68,19 +75,30 @@ bool CaveyAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) con
 
 void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
+    // Collect target cutoff and gain from parameters (use first/only for now)
+    float targetCutoffHz = lastCutoffHz;
+    float targetGain = 1.0f;
     for (const auto& parameterValue : parameters) {
-        const juce::String parameterName = parameterValue.first;
-        BackendParameter * parameter = parameterValue.second;
-
-        std::optional<float> gainValue = parameter->getBaseEffectValue(BaseEffect::VOLUME);
-        if (gainValue.has_value()) {
-            juce::String log;
-            buffer.applyGain(gainValue.value());
-        } else {
-            juce::String log;
-            buffer.applyGain(1.0);
+        BackendParameter* parameter = parameterValue.second;
+        if (auto lowPassValue = parameter->getBaseEffectValue(BaseEffect::LOW_PASS)) {
+            DBG("LP cutoff Hz 2: " << targetCutoffHz);
+            targetCutoffHz = *lowPassValue;
+        }
+        if (auto gainValue = parameter->getBaseEffectValue(BaseEffect::VOLUME)) {
+            targetGain = *gainValue;
         }
     }
+
+    juce::dsp::AudioBlock<float> audioBlock(buffer);
+    juce::dsp::ProcessContextReplacing<float> context(audioBlock);
+
+    auto& filter = processorChain.get<filterIndex>();
+    filter.setCutoffFrequencyHz(targetCutoffHz);
+
+    auto& gain = processorChain.get<gainIndex>();
+    gain.setGainLinear(targetGain);
+
+    processorChain.process(context);
 }
 
 juce::AudioProcessorEditor* CaveyAudioProcessor::createEditor()
