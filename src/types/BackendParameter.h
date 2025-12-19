@@ -29,6 +29,7 @@ private:
 
     static std::pair<float, float> getVolumeRange(float coefficient);
     static std::pair<float, float> getLowPassRange(float coefficient);
+    static std::pair<float, float> getHighPassRange(float coefficient);
 
     juce::String name;
     juce::AudioParameterFloat * parameterValue;

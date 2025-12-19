@@ -48,17 +48,15 @@ public:
     void setBackendParameterValue(const juce::String& parameterName, float value);
 private:
     std::map<juce::String, BackendParameter *> parameters;
-    // std::unique_ptr<juce::dsp::IIR::Filter<float>> filter;
-//    juce::dsp::ProcessorDuplicator<
-//            juce::dsp::IIR::Filter<float>,
-//            juce::dsp::IIR::Coefficients<float>> filter;
     float lastCutoffHz { 20000.0f };
+    float lastTargetGain {1.0};
 
     enum {
-        filterIndex,
+        lowPassFilterIndex,
+        highPassFilterIndex,
         gainIndex
     };
-    juce::dsp::ProcessorChain<juce::dsp::LadderFilter<float>, juce::dsp::Gain<float>> processorChain;
+    juce::dsp::ProcessorChain<juce::dsp::LadderFilter<float>, juce::dsp::LadderFilter<float>, juce::dsp::Gain<float>> processorChain;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessor)
 };

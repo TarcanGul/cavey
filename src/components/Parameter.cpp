@@ -2,14 +2,14 @@
 // Created by Tarcan Gul on 10/19/25.
 //
 #include "Parameter.h"
-Parameter::Parameter(juce::String name) {
+Parameter::Parameter(const juce::String& name) {
     slider_ = new Slider();
     removeButton_ = new TextButton();
     label_ = new Label();
     label_->setText("unnamed", NotificationType::dontSendNotification);
 
     slider_->setSliderStyle(juce::Slider::SliderStyle::Rotary);
-    slider_->setRange(0, 100, 1);
+    slider_->setRange(0, 1, 0.01);
     slider_->setValue(0);
     slider_->setName(name);
 

@@ -35,7 +35,7 @@ std::optional<float> BackendParameter::getBaseEffectValue(BaseEffect effect) {
     float secondValue = baseEffectRanges[effect].second;
 
     // If values are equal
-    if (firstValue <= secondValue + EPSILON && firstValue >= secondValue - EPSILON) {
+    if (std::abs(firstValue - secondValue) <= EPSILON) {
         return firstValue;
     }
 
@@ -58,6 +58,7 @@ BackendParameter::~BackendParameter() {
 void BackendParameter::calculateRanges() {
     baseEffectRanges[BaseEffect::VOLUME] = getVolumeRange(characteristicCoefficients[BaseEffect::VOLUME]);
     baseEffectRanges[BaseEffect::LOW_PASS] = getLowPassRange(characteristicCoefficients[BaseEffect::LOW_PASS]);
+    baseEffectRanges[BaseEffect::HIGH_PASS] = getHighPassRange(characteristicCoefficients[BaseEffect::HIGH_PASS]);
 }
 
 // coefficient range = 0-1
@@ -72,6 +73,13 @@ std::pair<float, float> BackendParameter::getLowPassRange(float coefficient) {
     // 0 -> {20000 , 20000}
     // 1 -> {20000, 1000}
     return {20000, 20000 - (19900 * coefficient)};
+}
+
+// This is going to give Hz.
+std::pair<float, float> BackendParameter::getHighPassRange(float coefficient) {
+    // 0 -> {0 , 0}
+    // 1 -> {0, 20000}
+    return {0, (2000 * coefficient)};
 }
 
 void BackendParameter::setParameterValue(float value) {

@@ -11,7 +11,7 @@
  */
 class Parameter : public juce::Component {
 public:
-    explicit Parameter(juce::String name);
+    explicit Parameter(const juce::String& name);
     ~Parameter() override;
     void resized() override;
 

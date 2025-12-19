@@ -82,14 +82,14 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
 
         // Generate the parameter
         audioProcessor.addBackendParameter( "Gain", {
-                {BaseEffect::VOLUME, 0.0f },
-                {BaseEffect::LOW_PASS, 1.0f }
+                {BaseEffect::LOW_PASS, 0.5f },
+                {BaseEffect::HIGH_PASS, 0.5f }
         });
     }
 }
 
 void CaveyAudioProcessorEditor::sliderValueChanged(juce::Slider *slider) {
-    audioProcessor.setBackendParameterValue(slider->getName(), static_cast<float>(slider->getValue() / 100.0));
+    audioProcessor.setBackendParameterValue(slider->getName(), static_cast<float>(slider->getValue()));
 }
 
 void CaveyAudioProcessorEditor::whenRemoveParameterButtonClicked(Parameter * parameterGroup) {

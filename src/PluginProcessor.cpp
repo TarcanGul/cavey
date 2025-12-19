@@ -15,7 +15,7 @@ CaveyAudioProcessor::CaveyAudioProcessor()
 CaveyAudioProcessor::~CaveyAudioProcessor() = default;
 
 void CaveyAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
-    PRINT("Prepare to play called");
+    DBG("Prepare to play called");
 
     juce::dsp::ProcessSpec spec = {
             .sampleRate = sampleRate,
@@ -23,12 +23,19 @@ void CaveyAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) 
             .numChannels = static_cast<unsigned int>(getTotalNumOutputChannels())
     };
 
-    auto& filter = processorChain.get<filterIndex>();
-    filter.setMode(juce::dsp::LadderFilterMode::LPF24);
-    filter.setCutoffFrequencyHz(20000);
-    filter.setResonance (0.7f);
-
     processorChain.prepare(spec);
+
+    auto& lowPassFilter = processorChain.get<lowPassFilterIndex>();
+    lowPassFilter.setMode(juce::dsp::LadderFilterMode::LPF24);
+    lowPassFilter.setCutoffFrequencyHz(20000);
+    lowPassFilter.setResonance (0.7f);
+
+    auto& highPassFilter = processorChain.get<highPassFilterIndex>();
+    highPassFilter.setMode(juce::dsp::LadderFilterMode::HPF24);
+    highPassFilter.setCutoffFrequencyHz(0);
+    highPassFilter.setResonance (0.7f);
+
+    processorChain.reset();
 }
 
 void CaveyAudioProcessor::releaseResources() {}
@@ -76,28 +83,36 @@ bool CaveyAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) con
 void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     // Collect target cutoff and gain from parameters (use first/only for now)
-    float targetCutoffHz = lastCutoffHz;
-    float targetGain = 1.0f;
+    float targetLowPassCutoffHz = lastCutoffHz;
+    float targetHighPassCutoffHz = 0.0f;
+    float targetGain = lastTargetGain;
     for (const auto& parameterValue : parameters) {
         BackendParameter* parameter = parameterValue.second;
         if (auto lowPassValue = parameter->getBaseEffectValue(BaseEffect::LOW_PASS)) {
-            DBG("LP cutoff Hz 2: " << targetCutoffHz);
-            targetCutoffHz = *lowPassValue;
+            targetLowPassCutoffHz = *lowPassValue;
+        }
+        if (auto highPassValue = parameter->getBaseEffectValue(BaseEffect::HIGH_PASS)) {
+            targetHighPassCutoffHz = *highPassValue;
         }
         if (auto gainValue = parameter->getBaseEffectValue(BaseEffect::VOLUME)) {
             targetGain = *gainValue;
         }
     }
 
-    juce::dsp::AudioBlock<float> audioBlock(buffer);
-    juce::dsp::ProcessContextReplacing<float> context(audioBlock);
+    // Apply parameter updates before processing
+    lastCutoffHz = targetLowPassCutoffHz;
+    lastTargetGain = targetGain;
+    auto& lowPassFilter = processorChain.get<lowPassFilterIndex>();
+    lowPassFilter.setCutoffFrequencyHz(targetLowPassCutoffHz);
 
-    auto& filter = processorChain.get<filterIndex>();
-    filter.setCutoffFrequencyHz(targetCutoffHz);
+    auto& highPassFilter = processorChain.get<highPassFilterIndex>();
+    highPassFilter.setCutoffFrequencyHz(targetHighPassCutoffHz);
 
     auto& gain = processorChain.get<gainIndex>();
     gain.setGainLinear(targetGain);
 
+    juce::dsp::AudioBlock<float> audioBlock(buffer);
+    juce::dsp::ProcessContextReplacing<float> context(audioBlock);
     processorChain.process(context);
 }
 
