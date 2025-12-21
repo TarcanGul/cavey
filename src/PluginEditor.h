@@ -5,6 +5,7 @@
 #include <iterator>
 #include <utility>
 #include "components/Parameter.h"
+#include "controllers/LLMController.h"
 
 #define PRINT(text) std::cout << text << std::endl
 
@@ -36,6 +37,7 @@ public:
     void resized() override;
 
 private:
+    LLMController * llm;
     void buttonClicked(Button * buttonRef) override;
     void whenGenerateButtonClicked();
     void whenRemoveParameterButtonClicked(Parameter * parameterGroup);

@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
+#include "controllers/OllamaController.h"
 
 class CaveyAudioProcessor; // forward-declare to match include order
 
@@ -21,6 +22,9 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     addAndMakeVisible(&mainLabel);
     addAndMakeVisible(&promptEditor);
     addAndMakeVisible(&generateButton);
+
+    // TODO: Maybe a static factory is good
+    llm = static_cast<LLMController *>(new OllamaController());
 }
 
 CaveyAudioProcessorEditor::~CaveyAudioProcessorEditor() {
@@ -140,6 +144,5 @@ std::optional<Parameter *> CaveyAudioProcessorEditor::getParameterGroup(Button *
 
     return {};
 }
-
 
 
