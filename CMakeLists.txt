@@ -23,7 +23,7 @@ else()
     FetchContent_MakeAvailable(juce)
 endif()
 
-find_package(Boost 1.89 REQUIRED)
+find_package(Boost 1.89 REQUIRED COMPONENTS json)
 
 # Create the plugin target
 juce_add_plugin(CaveyPlugin
@@ -48,6 +48,7 @@ target_sources(CaveyPlugin PRIVATE
     src/PluginEditor.cpp
     src/types/BackendParameter.cpp
     src/components/Parameter.cpp
+    src/controllers/OllamaController.cpp
 )
 
 target_compile_features(CaveyPlugin PRIVATE cxx_std_17)
@@ -62,6 +63,8 @@ target_compile_definitions(CaveyPlugin
 
 target_link_libraries(CaveyPlugin
     PRIVATE
+        Boost::headers
+        Boost::json
         juce::juce_audio_utils
         juce::juce_audio_plugin_client
         juce::juce_gui_extra

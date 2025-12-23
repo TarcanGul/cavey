@@ -84,6 +84,12 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
         parameter->getSlider()->addListener(this);
         parameterAdded();
 
+        const juce::String response = this->llm->prompt(inputPrompt);
+        // Validate if response is valid json, if not throw std::invalid_exception
+        PRINT("Response: " << response);
+
+        // Parse response and turn to this method call.
+
         // Generate the parameter
         audioProcessor.addBackendParameter( "Gain", {
                 {BaseEffect::LOW_PASS, 0.5f },
