@@ -49,7 +49,10 @@ target_sources(CaveyPlugin PRIVATE
     src/types/BackendParameter.cpp
     src/components/Parameter.cpp
     src/controllers/OllamaController.cpp
+    src/controllers/SystemPrompt.md
 )
+
+set_source_files_properties(src/controllers/SystemPrompt.md PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 
 target_compile_features(CaveyPlugin PRIVATE cxx_std_17)
 

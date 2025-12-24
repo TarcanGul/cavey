@@ -77,9 +77,9 @@ std::pair<float, float> BackendParameter::getLowPassRange(float coefficient) {
 
 // This is going to give Hz.
 std::pair<float, float> BackendParameter::getHighPassRange(float coefficient) {
-    // 0 -> {0 , 0}
-    // 1 -> {0, 20000}
-    return {0, (2000 * coefficient)};
+    // 0 -> {20 , 0}
+    // 1 -> {20, 20000}
+    return {20, (2000 * coefficient)};
 }
 
 void BackendParameter::setParameterValue(float value) {

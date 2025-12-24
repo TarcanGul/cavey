@@ -7,16 +7,25 @@
 #include <regex>
 
 OllamaController::OllamaController()
-    : stream(ioc), systemPromptMarkdown("SystemPrompt.md") {
+    : stream(ioc), systemPromptMarkdown("../Resources/SystemPrompt.md", std::ios::in) {
     // Could move this to a static factory
     tcp::resolver resolver(ioc);
     auto const results = resolver.resolve(OLLAMA_HOST, OLLAMA_PORT);
     stream.connect(results);
 
-    systemPrompt.assign(
-            std::istreambuf_iterator<char>(systemPromptMarkdown),
-                    std::istreambuf_iterator<char>()
-            );
+    std::ostringstream output_str;
+
+    if (systemPromptMarkdown.is_open()) {
+        std::string line;
+        while(std::getline(systemPromptMarkdown, line)) {
+            systemPrompt += (line + '\n');
+        }
+        systemPromptMarkdown.close();
+    } else {
+        std::cout << "File not opening?" << std::endl;
+    }
+
+    std::cout << "System Prompt: " << systemPrompt << std::endl;
 }
 
 String OllamaController::prompt(const juce::String &prompt) {
@@ -30,8 +39,9 @@ String OllamaController::prompt(const juce::String &prompt) {
     req.set(http::field::content_type, "application/json");
 
     // Inject the system prompt
-    std::string actualPrompt = systemPrompt;
-    std::regex_replace(actualPrompt, std::regex("\\{\\{ USER_PROMPT \\}\\}"), prompt.toStdString());
+    std::string actualPrompt = std::regex_replace(systemPrompt, std::regex("\\{\\{ USER_PROMPT \\}\\}"), prompt.toStdString());
+
+    std::cout << "Actual Prompt: " << actualPrompt << std::endl;
 
     boost::json::object jsonBody;
     jsonBody["model"] = OLLAMA_MODEL;
@@ -47,6 +57,8 @@ String OllamaController::prompt(const juce::String &prompt) {
     http::response<http::dynamic_body> response;
 
     http::read(stream, responseBuffer, response);
+
+    std::cout << response << std::endl;
 
     // Read in the 'response' field. The http response will be JSON.
     const std::string body = beast::buffers_to_string(response.body().data());

@@ -32,7 +32,7 @@ void CaveyAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) 
 
     auto& highPassFilter = processorChain.get<highPassFilterIndex>();
     highPassFilter.setMode(juce::dsp::LadderFilterMode::HPF24);
-    highPassFilter.setCutoffFrequencyHz(0);
+    highPassFilter.setCutoffFrequencyHz(20);
     highPassFilter.setResonance (0.7f);
 
     processorChain.reset();
@@ -84,7 +84,7 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
 {
     // Collect target cutoff and gain from parameters (use first/only for now)
     float targetLowPassCutoffHz = lastCutoffHz;
-    float targetHighPassCutoffHz = 0.0f;
+    float targetHighPassCutoffHz = 20.0f;
     float targetGain = lastTargetGain;
     for (const auto& parameterValue : parameters) {
         BackendParameter* parameter = parameterValue.second;
