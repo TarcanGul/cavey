@@ -6,6 +6,11 @@ an array of base audio effect coefficients based on user prompt. These are base 
 - HIGH_PASS
 - LOW_PASS
 
+Also generate the name of the parameter name based on the prompt. Put it in a key named `NAME`.
+Keep the length of the name not more than 10 characters.
+
+Just reply with the json object and nothing else. Your response should be parsable directly as an json object.
+
 User can come up with many adjectives and definitions in his or her prompt. Try your best to interpret the intention and then
 generate the coefficient map.
 
@@ -17,9 +22,11 @@ Follow these rules at all cost:
 
 ## Task
 
-Here is the user prompt: {{ USER_PROMPT }}
+Here is the user prompt: {{ USER_PROMPT }}.
+Don't include this in your answer.
 
 ## Examples
+
 User prompt: "Give me a parameter that makes the sound change like you are going back and forth in underwater."
-Answer: {"Volume": 0.0, "HIGH_PASS": 0.4, "LOW_PASS": 0.8"}
+Answer: {"NAME": "Underwater", "VOLUME": 0.0, "HIGH_PASS": 0.4, "LOW_PASS": 0.8"}
 

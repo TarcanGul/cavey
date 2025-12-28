@@ -74,27 +74,30 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
         // Get text from the editor
         auto const& inputPrompt = promptEditor.getText();
         PRINT(inputPrompt);
-        // Call into llama here with the prompt.
-        // TODO: Get the name from user somehow?
-        auto * parameter = new Parameter("Gain");
+
+        // Async operation, show loading screen
+        const juce::String response = this->llm->prompt(inputPrompt);
+
+        boost::system::error_code errorCode;
+        const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
+        const boost::json::object parsedResponse = readResponse.as_object();
+
+        // TODO: error check
+        juce::String parameterName = juce::String(parsedResponse.at("NAME").get_string().c_str());
+
+        auto * parameter = new Parameter(parameterName);
         parameter->setRemoveButtonListener(this);
         parameterKnobs.emplace_back(parameter);
         addAndMakeVisible(parameter);
-        parameter->setLabel("Gain");
+        parameter->setLabel(parameterName);
         parameter->getSlider()->addListener(this);
         parameterAdded();
 
-        const juce::String response = this->llm->prompt(inputPrompt);
-
-        // Validate if response is valid json, if not throw std::invalid_exception
-        PRINT("Response: " << response);
-
-        // Parse response and turn to this method call.
-
         // Generate the parameter
-        audioProcessor.addBackendParameter( "Gain", {
-                {BaseEffect::LOW_PASS, 0.5f },
-                {BaseEffect::HIGH_PASS, 0.5f }
+        audioProcessor.addBackendParameter( parameterName, {
+                { BaseEffect::VOLUME, parsedResponse.at("VOLUME").get_double() },
+                { BaseEffect::LOW_PASS, parsedResponse.at("LOW_PASS").get_double() },
+                { BaseEffect::HIGH_PASS, parsedResponse.at("LOW_PASS").get_double() }
         });
     }
 }
