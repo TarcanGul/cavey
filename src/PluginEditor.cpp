@@ -73,7 +73,6 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
     if (parameterKnobs.size() < MAX_PARAMETER_AMOUNT) {
         // Get text from the editor
         auto const& inputPrompt = promptEditor.getText();
-        PRINT(inputPrompt);
 
         // Async operation, show loading screen
         const juce::String response = this->llm->prompt(inputPrompt);

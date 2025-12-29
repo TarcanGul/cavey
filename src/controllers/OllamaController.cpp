@@ -5,6 +5,7 @@
 #include "OllamaController.h"
 #include <string>
 #include <regex>
+#include <boost/algorithm/string/trim.hpp>
 
 OllamaController::OllamaController()
     : stream(ioc), systemPromptMarkdown("../Resources/SystemPrompt.md", std::ios::in) {
@@ -37,8 +38,6 @@ String OllamaController::prompt(const juce::String &prompt) {
     // Inject the system prompt
     std::string actualPrompt = std::regex_replace(systemPrompt, std::regex(R"(\{\{ USER_PROMPT \}\})"), prompt.toStdString());
 
-    std::cout << "Actual Prompt: " << actualPrompt << std::endl;
-
     boost::json::object jsonBody;
     jsonBody["model"] = OLLAMA_MODEL;
     jsonBody["prompt"] = actualPrompt;
@@ -63,5 +62,24 @@ String OllamaController::prompt(const juce::String &prompt) {
         throw std::runtime_error("Response JSON missing 'response' string field");
     }
     const auto& responseText = it->value().as_string();
-    return juce::String(responseText.c_str());
+    // Get the string within <json>...</json> tags and return only the inner JSON text.
+    static constexpr const char* OPEN_TAG = "<json>";
+    static constexpr const char* CLOSE_TAG = "</json>";
+    const std::string respStr(responseText.c_str());
+
+    const auto startPosRaw = respStr.find(OPEN_TAG);
+    if (startPosRaw == std::string::npos) {
+        throw std::runtime_error("Response missing <json> tag");
+    }
+    const auto startPos = startPosRaw + std::char_traits<char>::length(OPEN_TAG);
+    const auto endPos = respStr.find(CLOSE_TAG, startPos);
+    if (endPos == std::string::npos) {
+        throw std::runtime_error("Response missing </json> tag");
+    }
+
+    auto jsonPayload = respStr.substr(startPos, endPos - startPos);
+    jsonPayload = boost::algorithm::trim_copy(jsonPayload);
+
+    std::cout << jsonPayload << std::endl;
+    return { jsonPayload };
 }
