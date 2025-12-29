@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
+#include "controllers/OllamaController.h"
 
 class CaveyAudioProcessor; // forward-declare to match include order
 
@@ -21,6 +22,9 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     addAndMakeVisible(&mainLabel);
     addAndMakeVisible(&promptEditor);
     addAndMakeVisible(&generateButton);
+
+    // TODO: Maybe a static factory is good
+    llm = static_cast<LLMController *>(new OllamaController());
 }
 
 CaveyAudioProcessorEditor::~CaveyAudioProcessorEditor() {
@@ -67,18 +71,39 @@ void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
 void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
     // Generate the knob here.
     if (parameterKnobs.size() < MAX_PARAMETER_AMOUNT) {
-        auto * parameter = new Parameter();
-        parameter->setRemoveButtonListener(this);
-        parameterKnobs.emplace_back(parameter);
-        addAndMakeVisible(parameter);
-        parameter->setLabel("New Parameter");
-        parameterAdded();
-
         // Get text from the editor
         auto const& inputPrompt = promptEditor.getText();
         PRINT(inputPrompt);
-        // Call into llama here with the prompt.
+
+        // Async operation, show loading screen
+        const juce::String response = this->llm->prompt(inputPrompt);
+
+        boost::system::error_code errorCode;
+        const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
+        const boost::json::object parsedResponse = readResponse.as_object();
+
+        // TODO: error check
+        juce::String parameterName = juce::String(parsedResponse.at("NAME").get_string().c_str());
+
+        auto * parameter = new Parameter(parameterName);
+        parameter->setRemoveButtonListener(this);
+        parameterKnobs.emplace_back(parameter);
+        addAndMakeVisible(parameter);
+        parameter->setLabel(parameterName);
+        parameter->getSlider()->addListener(this);
+        parameterAdded();
+
+        // Generate the parameter
+        audioProcessor.addBackendParameter( parameterName, {
+                { BaseEffect::VOLUME, parsedResponse.at("VOLUME").get_double() },
+                { BaseEffect::LOW_PASS, parsedResponse.at("LOW_PASS").get_double() },
+                { BaseEffect::HIGH_PASS, parsedResponse.at("LOW_PASS").get_double() }
+        });
     }
+}
+
+void CaveyAudioProcessorEditor::sliderValueChanged(juce::Slider *slider) {
+    audioProcessor.setBackendParameterValue(slider->getName(), static_cast<float>(slider->getValue()));
 }
 
 void CaveyAudioProcessorEditor::whenRemoveParameterButtonClicked(Parameter * parameterGroup) {
@@ -129,6 +154,5 @@ std::optional<Parameter *> CaveyAudioProcessorEditor::getParameterGroup(Button *
 
     return {};
 }
-
 
 

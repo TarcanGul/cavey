@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(CaveyPlugin VERSION 0.1.0)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Provide two ways to get JUCE: local path or FetchContent.
-# - Set JUCE_SOURCE_DIR=/path/to/JUCE to use a local checkout.
-# - Otherwise, FetchContent will download JUCE from GitHub.
+project(CaveyPlugin VERSION 0.1.0)
+add_compile_options(-Wall -Wextra -Wpedantic)
+
+# Dependencies
 
 if(DEFINED JUCE_SOURCE_DIR AND EXISTS "${JUCE_SOURCE_DIR}/CMakeLists.txt")
     message(STATUS "Using JUCE from local path: ${JUCE_SOURCE_DIR}")
@@ -19,6 +22,8 @@ else()
     )
     FetchContent_MakeAvailable(juce)
 endif()
+
+find_package(Boost 1.89 REQUIRED COMPONENTS json)
 
 # Create the plugin target
 juce_add_plugin(CaveyPlugin
@@ -40,12 +45,14 @@ juce_generate_juce_header(CaveyPlugin)
 
 target_sources(CaveyPlugin PRIVATE
     src/PluginProcessor.cpp
-    src/PluginProcessor.h
     src/PluginEditor.cpp
-    src/PluginEditor.h
+    src/types/BackendParameter.cpp
     src/components/Parameter.cpp
-    src/components/Parameter.h
+    src/controllers/OllamaController.cpp
+    src/controllers/SystemPrompt.md
 )
+
+set_source_files_properties(src/controllers/SystemPrompt.md PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 
 target_compile_features(CaveyPlugin PRIVATE cxx_std_17)
 
@@ -59,6 +66,8 @@ target_compile_definitions(CaveyPlugin
 
 target_link_libraries(CaveyPlugin
     PRIVATE
+        Boost::headers
+        Boost::json
         juce::juce_audio_utils
         juce::juce_audio_plugin_client
         juce::juce_gui_extra

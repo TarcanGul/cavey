@@ -1,10 +1,9 @@
 //
 // Created by Tarcan Gul on 10/19/25.
 //
+#pragma once
 
-#ifndef CAVEYPLUGIN_PARAMETER_H
-#define CAVEYPLUGIN_PARAMETER_H
-
+#include "../types/CaveyTypes.h"
 #include <JuceHeader.h>
 
 /**
@@ -12,8 +11,7 @@
  */
 class Parameter : public juce::Component {
 public:
-    // Location to render
-    Parameter();
+    explicit Parameter(const juce::String& name);
     ~Parameter() override;
     void resized() override;
 
@@ -29,6 +27,3 @@ private:
     Slider * slider_;
     Button * removeButton_;
 };
-
-
-#endif //CAVEYPLUGIN_PARAMETER_H
