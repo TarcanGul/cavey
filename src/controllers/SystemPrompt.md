@@ -5,6 +5,7 @@ an array of base audio effect coefficients based on user prompt. These are base 
 - VOLUME
 - HIGH_PASS
 - LOW_PASS
+- REVERB
 
 User can come up with many adjectives and definitions in his or her prompt. Try your best to interpret the intention and then
 generate the coefficient map.
@@ -20,7 +21,8 @@ Desired output format in json:
   "NAME": "string",
   "VOLUME": "double, [0-1]",
   "HIGH_PASS": "double, [0-1]",
-  "LOW_PASS": "double, [0-1]"
+  "LOW_PASS": "double, [0-1]",
+  "REVERB": "double, [0-1]"
 }
 ```
 
@@ -31,6 +33,7 @@ Follow these rules at all cost:
 - Don't exceed two fraction digits in your number generation.
 - Your response must be parsable as a json, don't put any other texts or preambles.
 - Keep the length of the name not more than 10 characters.
+- Don't do all zeros for the effect coefficients.
 
 ## Examples
 
@@ -41,7 +44,8 @@ Example Answer:
 "NAME": "Underwater",
 "VOLUME": 0.0,
 "HIGH_PASS": 0.4,
-"LOW_PASS": 0.8
+"LOW_PASS": 0.8,
+"REVERB": 0.0
 }
 </json>
 
@@ -52,8 +56,9 @@ Answer:
 <json>
 {
 "NAME": "",
-"VOLUME": 0.0,
-"HIGH_PASS": 0.0,
-"LOW_PASS" 0.0
+"VOLUME":,
+"HIGH_PASS":,
+"LOW_PASS":,
+"REVERB":
 }
 </json>

@@ -54,9 +54,15 @@ private:
     enum {
         lowPassFilterIndex,
         highPassFilterIndex,
-        gainIndex
+        gainIndex,
+        reverbIndex
     };
-    juce::dsp::ProcessorChain<juce::dsp::LadderFilter<float>, juce::dsp::LadderFilter<float>, juce::dsp::Gain<float>> processorChain;
+    juce::dsp::ProcessorChain<
+        juce::dsp::LadderFilter<float>,
+        juce::dsp::LadderFilter<float>,
+        juce::dsp::Gain<float>,
+        juce::dsp::Reverb
+    > processorChain;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessor)
 };

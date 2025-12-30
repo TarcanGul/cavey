@@ -9,5 +9,6 @@
 enum class BaseEffect {
     VOLUME,
     LOW_PASS,
-    HIGH_PASS
+    HIGH_PASS,
+    REVERB
 };

@@ -5,10 +5,7 @@
 #include <optional>
 #include <utility>
 
-BackendParameter::BackendParameter(juce::AudioParameterFloat *parameterValue) : parameterValue(parameterValue) {
-    // juce::File logFile("~/logs.txt");
-    // fileLogger = std::make_unique<juce::FileLogger>(std::move(logFile), juce::String("BackendParameter"));
-}
+BackendParameter::BackendParameter(juce::AudioParameterFloat *parameterValue) : parameterValue(parameterValue) {}
 
 void BackendParameter::setName(juce::String pName) {
     this->name = std::move(pName);
@@ -59,6 +56,7 @@ void BackendParameter::calculateRanges() {
     baseEffectRanges[BaseEffect::VOLUME] = getVolumeRange(characteristicCoefficients[BaseEffect::VOLUME]);
     baseEffectRanges[BaseEffect::LOW_PASS] = getLowPassRange(characteristicCoefficients[BaseEffect::LOW_PASS]);
     baseEffectRanges[BaseEffect::HIGH_PASS] = getHighPassRange(characteristicCoefficients[BaseEffect::HIGH_PASS]);
+    baseEffectRanges[BaseEffect::REVERB] = getReverbRange(characteristicCoefficients[BaseEffect::REVERB]);
 }
 
 // coefficient range = 0-1
@@ -80,6 +78,10 @@ std::pair<float, float> BackendParameter::getHighPassRange(float coefficient) {
     // 0 -> {20 , 0}
     // 1 -> {20, 20000}
     return {20, (2000 * coefficient)};
+}
+
+std::pair<float, float> BackendParameter::getReverbRange(float coefficient) {
+    return { 0, coefficient };
 }
 
 void BackendParameter::setParameterValue(float value) {

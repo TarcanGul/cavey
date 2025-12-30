@@ -86,6 +86,7 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
     float targetLowPassCutoffHz = lastCutoffHz;
     float targetHighPassCutoffHz = 20.0f;
     float targetGain = lastTargetGain;
+    float targetReverbWetLevel = 0;
     for (const auto& parameterValue : parameters) {
         BackendParameter* parameter = parameterValue.second;
         if (auto lowPassValue = parameter->getBaseEffectValue(BaseEffect::LOW_PASS)) {
@@ -96,6 +97,9 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
         }
         if (auto gainValue = parameter->getBaseEffectValue(BaseEffect::VOLUME)) {
             targetGain = *gainValue;
+        }
+        if (auto reverbValue = parameter->getBaseEffectValue(BaseEffect::REVERB)) {
+            targetReverbWetLevel = *reverbValue;
         }
     }
 
@@ -110,6 +114,11 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
 
     auto& gain = processorChain.get<gainIndex>();
     gain.setGainLinear(targetGain);
+
+    auto& reverb = processorChain.get<reverbIndex>();
+    reverb.setParameters({
+        .wetLevel = targetReverbWetLevel
+    });
 
     juce::dsp::AudioBlock<float> audioBlock(buffer);
     juce::dsp::ProcessContextReplacing<float> context(audioBlock);

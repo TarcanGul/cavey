@@ -23,19 +23,22 @@ public:
 
     std::optional<float> getBaseEffectValue(BaseEffect effect);
 private:
-    constexpr static float EPSILON = 0.00000001f;
+    constexpr static float EPSILON = 1e-9;
 
     void calculateRanges();
 
     static std::pair<float, float> getVolumeRange(float coefficient);
     static std::pair<float, float> getLowPassRange(float coefficient);
     static std::pair<float, float> getHighPassRange(float coefficient);
+    static std::pair<float, float> getReverbRange(float coefficient);
 
     juce::String name;
     juce::AudioParameterFloat * parameterValue;
     std::map<BaseEffect, float> characteristicCoefficients = {
             {BaseEffect::VOLUME, 0.0f},
-            {BaseEffect::LOW_PASS, 0.0f}
+            {BaseEffect::LOW_PASS, 0.0f},
+            { BaseEffect:: HIGH_PASS, 0.0f},
+            {BaseEffect::REVERB, 0.0f}
     };
 
     std::map<BaseEffect, std::pair<float, float>> baseEffectRanges = {};
