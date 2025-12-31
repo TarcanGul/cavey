@@ -31,6 +31,7 @@ private:
     static std::pair<float, float> getLowPassRange(float coefficient);
     static std::pair<float, float> getHighPassRange(float coefficient);
     static std::pair<float, float> getReverbRange(float coefficient);
+    static std::pair<float, float> getDistortionRange(float coefficient);
 
     juce::String name;
     juce::AudioParameterFloat * parameterValue;
@@ -38,7 +39,8 @@ private:
             {BaseEffect::VOLUME, 0.0f},
             {BaseEffect::LOW_PASS, 0.0f},
             { BaseEffect:: HIGH_PASS, 0.0f},
-            {BaseEffect::REVERB, 0.0f}
+            {BaseEffect::REVERB, 0.0f},
+            { BaseEffect::DISTORTION, 0.0f}
     };
 
     std::map<BaseEffect, std::pair<float, float>> baseEffectRanges = {};

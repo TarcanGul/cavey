@@ -50,18 +50,23 @@ private:
     std::map<juce::String, BackendParameter *> parameters;
     float lastCutoffHz { 20000.0f };
     float lastTargetGain {1.0};
+    float lastDistortionValue {0.0};
 
     enum {
         lowPassFilterIndex,
         highPassFilterIndex,
         gainIndex,
-        reverbIndex
+        reverbIndex,
+        driveIndex,
+        distortionIndex
     };
     juce::dsp::ProcessorChain<
         juce::dsp::LadderFilter<float>,
         juce::dsp::LadderFilter<float>,
         juce::dsp::Gain<float>,
-        juce::dsp::Reverb
+        juce::dsp::Reverb,
+        juce::dsp::Gain<float>, // For distortion
+        juce::dsp::WaveShaper<float>
     > processorChain;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessor)

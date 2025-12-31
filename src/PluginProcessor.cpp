@@ -35,6 +35,9 @@ void CaveyAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) 
     highPassFilter.setCutoffFrequencyHz(20);
     highPassFilter.setResonance (0.7f);
 
+    auto& distortion = processorChain.get<distortionIndex>();
+    distortion.functionToUse = [](float x) { return std::tanh(x); };
+
     processorChain.reset();
 }
 
@@ -87,6 +90,7 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
     float targetHighPassCutoffHz = 20.0f;
     float targetGain = lastTargetGain;
     float targetReverbWetLevel = 0;
+    float targetDistortionLevel = 0;
     for (const auto& parameterValue : parameters) {
         BackendParameter* parameter = parameterValue.second;
         if (auto lowPassValue = parameter->getBaseEffectValue(BaseEffect::LOW_PASS)) {
@@ -100,6 +104,9 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
         }
         if (auto reverbValue = parameter->getBaseEffectValue(BaseEffect::REVERB)) {
             targetReverbWetLevel = *reverbValue;
+        }
+        if (auto distortionValue = parameter->getBaseEffectValue(BaseEffect::DISTORTION)) {
+            targetDistortionLevel = *distortionValue;
         }
     }
 
@@ -119,6 +126,9 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
     reverb.setParameters({
         .wetLevel = targetReverbWetLevel
     });
+
+    auto& drive = processorChain.get<driveIndex>();
+    drive.setGainLinear(juce::Decibels::decibelsToGain(targetDistortionLevel * 24.0f));
 
     juce::dsp::AudioBlock<float> audioBlock(buffer);
     juce::dsp::ProcessContextReplacing<float> context(audioBlock);

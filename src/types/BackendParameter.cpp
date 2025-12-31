@@ -57,6 +57,7 @@ void BackendParameter::calculateRanges() {
     baseEffectRanges[BaseEffect::LOW_PASS] = getLowPassRange(characteristicCoefficients[BaseEffect::LOW_PASS]);
     baseEffectRanges[BaseEffect::HIGH_PASS] = getHighPassRange(characteristicCoefficients[BaseEffect::HIGH_PASS]);
     baseEffectRanges[BaseEffect::REVERB] = getReverbRange(characteristicCoefficients[BaseEffect::REVERB]);
+    baseEffectRanges[BaseEffect::DISTORTION] = getDistortionRange(characteristicCoefficients[BaseEffect::DISTORTION]);
 }
 
 // coefficient range = 0-1
@@ -82,6 +83,10 @@ std::pair<float, float> BackendParameter::getHighPassRange(float coefficient) {
 
 std::pair<float, float> BackendParameter::getReverbRange(float coefficient) {
     return { 0, coefficient };
+}
+
+std::pair<float, float> BackendParameter::getDistortionRange(float coefficient) {
+    return {0 , coefficient};
 }
 
 void BackendParameter::setParameterValue(float value) {
