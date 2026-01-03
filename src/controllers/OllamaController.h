@@ -16,6 +16,7 @@
 #include <string>
 #include <fstream>
 #include "LLMController.h"
+#include "BinaryData.h"
 
 namespace beast = boost::beast;     // from <boost/beast.hpp>
 namespace http = beast::http;       // from <boost/beast/http.hpp>
@@ -30,9 +31,6 @@ private:
     static constexpr std::string_view API_BASE = "/api";
     static constexpr std::string_view OLLAMA_MODEL = "gemma3:1b";
     static constexpr unsigned int HTTP_VERSION = 10;
-    net::io_context ioc;
-    boost::beast::tcp_stream stream;
-    std::ifstream systemPromptMarkdown;
     std::string systemPrompt {};
 public:
     explicit OllamaController();

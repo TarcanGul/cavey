@@ -52,9 +52,12 @@ target_sources(CaveyPlugin PRIVATE
     src/controllers/SystemPrompt.md
 )
 
+juce_add_binary_data(CaveyAssets SOURCES src/controllers/SystemPrompt.md)
+target_link_libraries(CaveyPlugin PRIVATE CaveyAssets)
+
 set_source_files_properties(src/controllers/SystemPrompt.md PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 
-target_compile_features(CaveyPlugin PRIVATE cxx_std_17)
+target_compile_features(CaveyPlugin PRIVATE cxx_std_23)
 
 # Recommended flags to reduce bloat and disable unused webviews, etc.
 target_compile_definitions(CaveyPlugin

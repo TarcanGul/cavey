@@ -22,7 +22,8 @@ Desired output format in json:
   "VOLUME": "double, [0-1]",
   "HIGH_PASS": "double, [0-1]",
   "LOW_PASS": "double, [0-1]",
-  "REVERB": "double, [0-1]"
+  "REVERB": "double, [0-1]",
+  "DISTORTION": "double, [0-1]"
 }
 ```
 
@@ -45,7 +46,8 @@ Example Answer:
 "VOLUME": 0.0,
 "HIGH_PASS": 0.4,
 "LOW_PASS": 0.8,
-"REVERB": 0.0
+"REVERB": 0.0,
+"DISTORTION": 0.2,
 }
 </json>
 
@@ -59,6 +61,7 @@ Answer:
 "VOLUME":,
 "HIGH_PASS":,
 "LOW_PASS":,
-"REVERB":
+"REVERB":,
+"DISTORTION":
 }
 </json>

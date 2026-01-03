@@ -69,5 +69,7 @@ private:
         juce::dsp::WaveShaper<float>
     > processorChain;
 
+    std::unique_ptr<juce::FileLogger> logger;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessor)
 };

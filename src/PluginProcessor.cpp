@@ -3,6 +3,7 @@
 #include <utility>
 #include "PluginEditor.h"
 #include <cmath>
+#include <format>
 
 CaveyAudioProcessor::CaveyAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -10,12 +11,19 @@ CaveyAudioProcessor::CaveyAudioProcessor()
         .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
         .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 #endif
-{}
+{
+    logger.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
+    juce::Logger::setCurrentLogger(logger.get());
+    juce::Logger::writeToLog("Audio processor is initiated.");
+}
 
-CaveyAudioProcessor::~CaveyAudioProcessor() = default;
+CaveyAudioProcessor::~CaveyAudioProcessor() {
+    juce::Logger::setCurrentLogger(nullptr);
+    logger.reset();
+};
 
 void CaveyAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
-    DBG("Prepare to play called");
+    juce::Logger::writeToLog("Prepare to play called");
 
     juce::dsp::ProcessSpec spec = {
             .sampleRate = sampleRate,
@@ -44,6 +52,7 @@ void CaveyAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) 
 void CaveyAudioProcessor::releaseResources() {}
 
 void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName, std::map<BaseEffect, float> coefficients) {
+    juce::Logger::writeToLog("Backend parameter" + parameterName.toStdString() + "is being added");
     auto * newBackendParameterValue = new juce::AudioParameterFloat(parameterName, parameterName, 0.0f, 1.0f, 0.0f);
     auto * newBackendParameter = new BackendParameter(newBackendParameterValue);
     newBackendParameter->setName(parameterName);

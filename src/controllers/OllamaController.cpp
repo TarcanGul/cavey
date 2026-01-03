@@ -7,21 +7,13 @@
 #include <regex>
 #include <boost/algorithm/string/trim.hpp>
 
-OllamaController::OllamaController()
-    : stream(ioc), systemPromptMarkdown("../Resources/SystemPrompt.md", std::ios::in) {
-    // Could move this to a static factory
-    tcp::resolver resolver(ioc);
-    auto const results = resolver.resolve(OLLAMA_HOST, OLLAMA_PORT);
-    stream.connect(results);
-
-    if (systemPromptMarkdown.is_open()) {
-        std::string line;
-        while(std::getline(systemPromptMarkdown, line)) {
-            systemPrompt += (line + '\n');
-        }
-        systemPromptMarkdown.close();
+OllamaController::OllamaController() {
+    int dataSize = 0;
+    const char * data = BinaryData::getNamedResource("SystemPrompt_md", dataSize);
+    if (data && dataSize > 0) {
+        systemPrompt.assign(data,  static_cast<size_t>(dataSize));
     } else {
-        std::cout << "File not opening." << std::endl;
+        juce::Logger::writeToLog("Cannot read system prompt");
     }
 }
 
@@ -30,10 +22,21 @@ String OllamaController::prompt(const juce::String &prompt) {
         throw std::invalid_argument("Prompt cannot be empty");
     }
 
+    // Recreate connection every time (http 1.0). More reliable
+    net::io_context ioc;
+    boost::beast::tcp_stream stream {ioc};
+    tcp::resolver resolver(ioc);
+    auto const results = resolver.resolve(OLLAMA_HOST, OLLAMA_PORT);
+    stream.connect(results);
+
+    juce::Logger::writeToLog("Processing prompt");
+    juce::Logger::writeToLog(prompt.toStdString());
+
     http::request<http::string_body> req{http::verb::post, std::string(API_BASE).append("/generate"), HTTP_VERSION};
     req.set(http::field::host, OLLAMA_HOST);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     req.set(http::field::content_type, "application/json");
+    req.keep_alive(true);
 
     // Inject the system prompt
     std::string actualPrompt = std::regex_replace(systemPrompt, std::regex(R"(\{\{ USER_PROMPT \}\})"), prompt.toStdString());
@@ -61,7 +64,11 @@ String OllamaController::prompt(const juce::String &prompt) {
     if (it == obj.end() || !it->value().is_string()) {
         throw std::runtime_error("Response JSON missing 'response' string field");
     }
+
     const auto& responseText = it->value().as_string();
+
+    juce::Logger::writeToLog("Response is: ");
+    juce::Logger::writeToLog(responseText.c_str());
     // Get the string within <json>...</json> tags and return only the inner JSON text.
     static constexpr const char* OPEN_TAG = "<json>";
     static constexpr const char* CLOSE_TAG = "</json>";
@@ -81,5 +88,6 @@ String OllamaController::prompt(const juce::String &prompt) {
     jsonPayload = boost::algorithm::trim_copy(jsonPayload);
 
     std::cout << jsonPayload << std::endl;
+    stream.close();
     return { jsonPayload };
 }

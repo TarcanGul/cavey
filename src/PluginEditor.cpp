@@ -7,6 +7,7 @@ class CaveyAudioProcessor; // forward-declare to match include order
 CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
+    juce::Logger::writeToLog("Editor is starting...");
     setSize(INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT);
     setResizable(true, true);
 
@@ -25,6 +26,8 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
 
     // TODO: Maybe a static factory is good
     llm = static_cast<LLMController *>(new OllamaController());
+
+    juce::Logger::writeToLog("Editor has been initialized.");
 }
 
 CaveyAudioProcessorEditor::~CaveyAudioProcessorEditor() {
@@ -57,6 +60,7 @@ void CaveyAudioProcessorEditor::resized() {
 }
 
 void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
+    juce::Logger::writeToLog("Button is clicked");
     if (buttonRef == &generateButton) {
         whenGenerateButtonClicked();
         return;
@@ -69,6 +73,8 @@ void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
 }
 
 void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
+    juce::Logger::writeToLog("Generate button is clicked");
+
     // Generate the knob here.
     if (parameterKnobs.size() < MAX_PARAMETER_AMOUNT) {
         // Get text from the editor
@@ -81,7 +87,8 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
         const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
         const boost::json::object parsedResponse = readResponse.as_object();
 
-        // TODO: error check
+        juce::Logger::writeToLog("Response is returned");
+
         juce::String parameterName = juce::String(parsedResponse.at("NAME").get_string().c_str());
 
         auto * parameter = new Parameter(parameterName);
@@ -96,7 +103,9 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
         audioProcessor.addBackendParameter( parameterName, {
                 { BaseEffect::VOLUME, parsedResponse.at("VOLUME").get_double() },
                 { BaseEffect::LOW_PASS, parsedResponse.at("LOW_PASS").get_double() },
-                { BaseEffect::HIGH_PASS, parsedResponse.at("LOW_PASS").get_double() }
+                { BaseEffect::HIGH_PASS, parsedResponse.at("HIGH_PASS").get_double() },
+                { BaseEffect::REVERB, parsedResponse.at("REVERB").get_double() },
+                { BaseEffect::DISTORTION, parsedResponse.at("DISTORTION").get_double()}
         });
     }
 }
