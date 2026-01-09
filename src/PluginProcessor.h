@@ -5,6 +5,7 @@
 #include "types/CaveyTypes.h"
 #include "types/BackendParameter.h"
 #include <stdexcept>
+#include "controllers/LLMController.h"
 
 class CaveyAudioProcessor : public juce::AudioProcessor {
 public:
@@ -43,10 +44,12 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
-    void addBackendParameter(const juce::String& parameterName, std::map<BaseEffect, float>);
+    juce::String addCaveyParameter(juce::String prompt);
 
     void setBackendParameterValue(const juce::String& parameterName, float value);
 private:
+    void addBackendParameter(const juce::String& parameterName, std::map<BaseEffect, float>);
+    LLMController * llm;
     std::map<juce::String, BackendParameter *> parameters;
     float lastCutoffHz { 20000.0f };
     float lastTargetGain {1.0};

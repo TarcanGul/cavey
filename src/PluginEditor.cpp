@@ -1,7 +1,5 @@
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
-#include "controllers/OllamaController.h"
-
 class CaveyAudioProcessor; // forward-declare to match include order
 
 CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
@@ -23,9 +21,6 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     addAndMakeVisible(&mainLabel);
     addAndMakeVisible(&promptEditor);
     addAndMakeVisible(&generateButton);
-
-    // TODO: Maybe a static factory is good
-    llm = static_cast<LLMController *>(new OllamaController());
 
     juce::Logger::writeToLog("Editor has been initialized.");
 }
@@ -73,41 +68,27 @@ void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
 }
 
 void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
-    juce::Logger::writeToLog("Generate button is clicked");
-
-    // Generate the knob here.
-    if (parameterKnobs.size() < MAX_PARAMETER_AMOUNT) {
-        // Get text from the editor
-        auto const& inputPrompt = promptEditor.getText();
-
-        // Async operation, show loading screen
-        const juce::String response = this->llm->prompt(inputPrompt);
-
-        boost::system::error_code errorCode;
-        const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
-        const boost::json::object parsedResponse = readResponse.as_object();
-
-        juce::Logger::writeToLog("Response is returned");
-
-        juce::String parameterName = juce::String(parsedResponse.at("NAME").get_string().c_str());
-
-        auto * parameter = new Parameter(parameterName);
-        parameter->setRemoveButtonListener(this);
-        parameterKnobs.emplace_back(parameter);
-        addAndMakeVisible(parameter);
-        parameter->setLabel(parameterName);
-        parameter->getSlider()->addListener(this);
-        parameterAdded();
-
-        // Generate the parameter
-        audioProcessor.addBackendParameter( parameterName, {
-                { BaseEffect::VOLUME, parsedResponse.at("VOLUME").get_double() },
-                { BaseEffect::LOW_PASS, parsedResponse.at("LOW_PASS").get_double() },
-                { BaseEffect::HIGH_PASS, parsedResponse.at("HIGH_PASS").get_double() },
-                { BaseEffect::REVERB, parsedResponse.at("REVERB").get_double() },
-                { BaseEffect::DISTORTION, parsedResponse.at("DISTORTION").get_double()}
-        });
+    if (parameterKnobs.size() >= MAX_PARAMETER_AMOUNT) {
+        // Error toast maybe
+        return;
     }
+
+    const juce::String prompt = promptEditor.getText();
+
+    const juce::String parameterName = audioProcessor.addCaveyParameter(prompt);
+
+    auto * parameter = new Parameter(parameterName);
+    parameter->setLabel(parameterName);
+    parameterKnobs.emplace_back(parameter);
+    parameter->setRemoveButtonListener(this);
+    parameter->getSlider()->addListener(this);
+    addAndMakeVisible(parameter);
+
+    juce::Logger::writeToLog("Parameter is added");
+    parameterAdded();
+
+    generateButton.setEnabled(true);
+
 }
 
 void CaveyAudioProcessorEditor::sliderValueChanged(juce::Slider *slider) {
@@ -117,7 +98,6 @@ void CaveyAudioProcessorEditor::sliderValueChanged(juce::Slider *slider) {
 void CaveyAudioProcessorEditor::whenRemoveParameterButtonClicked(Parameter * parameterGroup) {
     Slider * parameter = parameterGroup->getSlider();
     Button * removeButton = parameterGroup->getRemoveButton();
-    PRINT("remove button clicked");
     const auto newListHead = std::remove_if(
             parameterKnobs.begin(),
             parameterKnobs.end(),
@@ -133,7 +113,7 @@ void CaveyAudioProcessorEditor::whenRemoveParameterButtonClicked(Parameter * par
 }
 
 inline void CaveyAudioProcessorEditor::parameterAdded() {
-    PRINT("Parameter added");
+    juce::Logger::writeToLog("Parameter added");
     renderParameterKnobs();
     mainLabel.setVisible(false);
 }

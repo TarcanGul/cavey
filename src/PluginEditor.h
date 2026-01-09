@@ -5,9 +5,6 @@
 #include <iterator>
 #include <utility>
 #include "components/Parameter.h"
-#include "controllers/LLMController.h"
-
-#define PRINT(text) std::cout << text << std::endl
 
 static constexpr const int MARGIN_EXTRA_SMALL = 10;
 static constexpr const int MARGIN_SMALL = 20;
@@ -37,7 +34,6 @@ public:
     void resized() override;
 
 private:
-    LLMController * llm;
     void buttonClicked(Button * buttonRef) override;
     void whenGenerateButtonClicked();
     void whenRemoveParameterButtonClicked(Parameter * parameterGroup);

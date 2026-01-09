@@ -3,7 +3,7 @@
 #include <utility>
 #include "PluginEditor.h"
 #include <cmath>
-#include <format>
+#include "controllers/OllamaController.h"
 
 CaveyAudioProcessor::CaveyAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -12,6 +12,8 @@ CaveyAudioProcessor::CaveyAudioProcessor()
         .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 #endif
 {
+    llm = static_cast<LLMController *>(new OllamaController());
+
     logger.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
     juce::Logger::setCurrentLogger(logger.get());
     juce::Logger::writeToLog("Audio processor is initiated.");
@@ -64,7 +66,7 @@ void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName,
 void CaveyAudioProcessor::setBackendParameterValue(const juce::String& parameterName, float value) {
     auto parameter = parameters.at(parameterName);
     if (parameter == nullptr) {
-        PRINT(parameterName + " cannot be found in the parameters map!");
+        juce::Logger::writeToLog(parameterName + " cannot be found in the parameters map!");
         throw std::invalid_argument(parameterName.toStdString() + " cannot be found in the parameters map!");
     }
     parameter->setParameterValue(value);
@@ -159,6 +161,25 @@ void CaveyAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 void CaveyAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
     juce::ignoreUnused(data, sizeInBytes);
+}
+
+juce::String CaveyAudioProcessor::addCaveyParameter(juce::String prompt) {
+    // Do this part async
+    const juce::String response = this->llm->prompt(prompt);
+    boost::system::error_code errorCode;
+    const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
+    const boost::json::object parsedResponse = readResponse.as_object();
+    juce::String parameterName = juce::String(parsedResponse.at("NAME").get_string().c_str());
+
+    this->addBackendParameter( parameterName, {
+            { BaseEffect::VOLUME, parsedResponse.at("VOLUME").get_double() },
+            { BaseEffect::LOW_PASS, parsedResponse.at("LOW_PASS").get_double() },
+            { BaseEffect::HIGH_PASS, parsedResponse.at("HIGH_PASS").get_double() },
+            { BaseEffect::REVERB, parsedResponse.at("REVERB").get_double() },
+            { BaseEffect::DISTORTION, parsedResponse.at("DISTORTION").get_double()}
+    });
+
+    return parameterName;
 }
 
 // This creates new instances of the plugin
