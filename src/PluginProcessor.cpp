@@ -163,7 +163,7 @@ void CaveyAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
     juce::ignoreUnused(data, sizeInBytes);
 }
 
-juce::String CaveyAudioProcessor::addCaveyParameter(juce::String prompt) {
+void CaveyAudioProcessor::addCaveyParameter(juce::String prompt) {
     // Do this part async
     const juce::String response = this->llm->prompt(prompt);
     boost::system::error_code errorCode;
@@ -179,7 +179,7 @@ juce::String CaveyAudioProcessor::addCaveyParameter(juce::String prompt) {
             { BaseEffect::DISTORTION, parsedResponse.at("DISTORTION").get_double()}
     });
 
-    return parameterName;
+    sendActionMessage(parameterName);
 }
 
 // This creates new instances of the plugin

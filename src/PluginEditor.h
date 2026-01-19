@@ -5,6 +5,7 @@
 #include <iterator>
 #include <utility>
 #include "components/Parameter.h"
+#include "components/LoadingComponent.h"
 
 static constexpr const int MARGIN_EXTRA_SMALL = 10;
 static constexpr const int MARGIN_SMALL = 20;
@@ -25,7 +26,11 @@ static constexpr const long KNOB_HEIGHT = 10;
 
 class CaveyAudioProcessor;
 
-class CaveyAudioProcessorEditor : public juce::AudioProcessorEditor, public juce::Button::Listener, private juce::Slider::Listener  {
+class CaveyAudioProcessorEditor : public juce::AudioProcessorEditor,
+        public juce::Button::Listener,
+        public juce::ActionListener,
+        private juce::Slider::Listener
+{
 public:
     explicit CaveyAudioProcessorEditor(CaveyAudioProcessor&);
     ~CaveyAudioProcessorEditor() override;
@@ -41,12 +46,18 @@ private:
 
     void sliderValueChanged(juce::Slider * slider) override;
 
+    void actionListenerCallback(const juce::String &message) override;
+
+    void setLoading(bool desiredLoadingState);
+
     std::optional<Parameter *> getParameterGroup(Button * buttonRef);
     CaveyAudioProcessor& audioProcessor;
     Label mainLabel;
     TextEditor promptEditor;
     TextButton generateButton;
     std::vector<Parameter *> parameterKnobs = {};
+    LoadingComponent loadingOverlay;
+    bool isLoading = false;
 
     inline void parameterAdded();
     inline void parameterRemoved();

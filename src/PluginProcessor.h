@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include "controllers/LLMController.h"
 
-class CaveyAudioProcessor : public juce::AudioProcessor {
+class CaveyAudioProcessor : public juce::AudioProcessor, public juce::ActionBroadcaster {
 public:
     CaveyAudioProcessor();
     ~CaveyAudioProcessor() override;
@@ -44,7 +44,8 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
-    juce::String addCaveyParameter(juce::String prompt);
+    // Sends async message
+    void addCaveyParameter(juce::String prompt);
 
     void setBackendParameterValue(const juce::String& parameterName, float value);
 private:

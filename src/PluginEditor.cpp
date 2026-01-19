@@ -6,6 +6,7 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
     juce::Logger::writeToLog("Editor is starting...");
+
     setSize(INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT);
     setResizable(true, true);
 
@@ -21,6 +22,10 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     addAndMakeVisible(&mainLabel);
     addAndMakeVisible(&promptEditor);
     addAndMakeVisible(&generateButton);
+    addChildComponent(&loadingOverlay);
+    loadingOverlay.setVisible(false);
+
+    audioProcessor.addActionListener(this);
 
     juce::Logger::writeToLog("Editor has been initialized.");
 }
@@ -30,6 +35,7 @@ CaveyAudioProcessorEditor::~CaveyAudioProcessorEditor() {
     for (auto parameter : parameterKnobs) {
         delete parameter;
     }
+    audioProcessor.removeActionListener(this);
 }
 
 void CaveyAudioProcessorEditor::paint(juce::Graphics& g)
@@ -52,6 +58,7 @@ void CaveyAudioProcessorEditor::resized() {
     // Divide the screen to four areas (header - main area - text area - footer)
     promptEditor.setBounds(promptBounds.reduced(MARGIN_SMALL));
     generateButton.setBounds(buttonBounds.reduced(MARGIN_EXTRA_SMALL, MARGIN_SMALL));
+    loadingOverlay.setBounds(screen);
 }
 
 void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
@@ -73,22 +80,14 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
         return;
     }
 
+    setLoading(true);
+
     const juce::String prompt = promptEditor.getText();
 
-    const juce::String parameterName = audioProcessor.addCaveyParameter(prompt);
-
-    auto * parameter = new Parameter(parameterName);
-    parameter->setLabel(parameterName);
-    parameterKnobs.emplace_back(parameter);
-    parameter->setRemoveButtonListener(this);
-    parameter->getSlider()->addListener(this);
-    addAndMakeVisible(parameter);
-
-    juce::Logger::writeToLog("Parameter is added");
-    parameterAdded();
-
-    generateButton.setEnabled(true);
-
+    std::thread([this, p = prompt] {
+        audioProcessor.addCaveyParameter(p);
+        juce::Logger::writeToLog("Prompt sent as action message");
+    }).detach();
 }
 
 void CaveyAudioProcessorEditor::sliderValueChanged(juce::Slider *slider) {
@@ -133,6 +132,32 @@ void CaveyAudioProcessorEditor::renderParameterKnobs() const noexcept {
     }
 }
 
+void CaveyAudioProcessorEditor::actionListenerCallback(const juce::String &message) {
+    if (message.isEmpty()) {
+        juce::Logger::writeToLog("Empty message received, noop");
+        return;
+    }
+
+    // Right now it is hardcoded, only processor will send parameter name, can be changed later
+    const juce::String parameterName {message};
+
+    auto * parameter = new Parameter(parameterName);
+    parameter->setLabel(parameterName);
+    parameter->setRemoveButtonListener(this);
+    parameter->getSlider()->addListener(this);
+
+    juce::Logger::writeToLog("Parameter is added via the callback");
+
+    juce::MessageManager::callAsync([this, parameter] {
+        setLoading(false);
+        addAndMakeVisible(parameter);
+        parameterKnobs.emplace_back(parameter);
+        parameterAdded();
+    });
+
+    generateButton.setEnabled(true);
+}
+
 std::optional<Parameter *> CaveyAudioProcessorEditor::getParameterGroup(Button *buttonRef) {
     for (auto parameter : parameterKnobs) {
         Button * removeButton = parameter->getRemoveButton();
@@ -141,6 +166,15 @@ std::optional<Parameter *> CaveyAudioProcessorEditor::getParameterGroup(Button *
     }
 
     return {};
+}
+
+void CaveyAudioProcessorEditor::setLoading(bool desiredLoadingState) {
+    if (isLoading == desiredLoadingState) return;
+    isLoading = desiredLoadingState;
+    loadingOverlay.setVisible(isLoading);
+    mainLabel.setVisible(false);
+    if (isLoading) loadingOverlay.toFront(true);
+    repaint();
 }
 
 

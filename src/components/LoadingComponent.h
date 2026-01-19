@@ -1,16 +1,19 @@
 //
-// Created by Tarcan Gul on 1/19/26.
+// Simple component that displays a centered "Loading..." text.
 //
+#pragma once
 
-#ifndef CAVEYPLUGIN_LOADINGCOMPONENT_H
-#define CAVEYPLUGIN_LOADINGCOMPONENT_H
+#include <JuceHeader.h>
 
+class LoadingComponent : public juce::Component {
+public:
+    LoadingComponent();
+    ~LoadingComponent() override = default;
 
+    void resized() override;
+    void paint(juce::Graphics& g) override;
 
-class LoadingComponent {
-
+private:
+    juce::Label loadingLabel;
 };
 
-
-
-#endif //CAVEYPLUGIN_LOADINGCOMPONENT_H

@@ -48,6 +48,7 @@ target_sources(CaveyPlugin PRIVATE
     src/PluginEditor.cpp
     src/types/BackendParameter.cpp
     src/components/Parameter.cpp
+    src/components/LoadingComponent.cpp
     src/controllers/OllamaController.cpp
     src/controllers/SystemPrompt.md
 )
