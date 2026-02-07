@@ -54,7 +54,6 @@ private:
     std::map<juce::String, BackendParameter *> parameters;
     float lastCutoffHz { 20000.0f };
     float lastTargetGain {1.0};
-    float lastDistortionValue {0.0};
 
     enum {
         lowPassFilterIndex,

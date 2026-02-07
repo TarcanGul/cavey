@@ -7,16 +7,16 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
 {
     juce::Logger::writeToLog("Editor is starting...");
 
-    setSize(INIT_SCREEN_WIDTH, INIT_SCREEN_HEIGHT);
+    setSize(CaveyUI::INIT_SCREEN_WIDTH, CaveyUI::INIT_SCREEN_HEIGHT);
     setResizable(true, true);
 
     // Create the parameter area that first be a text box.
-    mainLabel.setText(MAIN_LABEL_TEXT, NotificationType::dontSendNotification);
+    mainLabel.setText(CaveyUI::MAIN_LABEL_TEXT, NotificationType::dontSendNotification);
     mainLabel.setEditable(false);
 
-    promptEditor.setTextToShowWhenEmpty(PROMPT_PLACEHOLDER_TEXT, Colours::grey.withAlpha(.6f));
+    promptEditor.setTextToShowWhenEmpty(CaveyUI::PROMPT_PLACEHOLDER_TEXT, Colours::grey.withAlpha(.6f));
 
-    generateButton.setButtonText(GENERATE_BUTTON_TEXT);
+    generateButton.setButtonText(CaveyUI::GENERATE_BUTTON_TEXT);
     generateButton.addListener(this);
 
     addAndMakeVisible(&mainLabel);
@@ -45,19 +45,19 @@ void CaveyAudioProcessorEditor::paint(juce::Graphics& g)
 
 void CaveyAudioProcessorEditor::resized() {
     auto screen = getLocalBounds();
-    auto promptBounds = screen.removeFromBottom(PROMPT_HEIGHT);
-    auto buttonBounds = promptBounds.removeFromRight(PROMPT_WIDTH);
+    auto promptBounds = screen.removeFromBottom(CaveyUI::PROMPT_HEIGHT);
+    auto buttonBounds = promptBounds.removeFromRight(CaveyUI::PROMPT_WIDTH);
 
     if (parameterKnobs.empty()) {
         mainLabel.setVisible(true);
-        mainLabel.setBounds(screen.withSizeKeepingCentre(mainLabel.getFont().getStringWidth(MAIN_LABEL_TEXT), 20));
+        mainLabel.setBounds(screen.withSizeKeepingCentre(mainLabel.getFont().getStringWidth(CaveyUI::MAIN_LABEL_TEXT), 20));
     } else {
         renderParameterKnobs();
     }
 
     // Divide the screen to four areas (header - main area - text area - footer)
-    promptEditor.setBounds(promptBounds.reduced(MARGIN_SMALL));
-    generateButton.setBounds(buttonBounds.reduced(MARGIN_EXTRA_SMALL, MARGIN_SMALL));
+    promptEditor.setBounds(promptBounds.reduced(CaveyUI::MARGIN_SMALL));
+    generateButton.setBounds(buttonBounds.reduced(CaveyUI::MARGIN_EXTRA_SMALL, CaveyUI::MARGIN_SMALL));
     loadingOverlay.setBounds(screen);
 }
 
@@ -75,7 +75,7 @@ void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
 }
 
 void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
-    if (parameterKnobs.size() >= MAX_PARAMETER_AMOUNT) {
+    if (parameterKnobs.size() >= CaveyUI::MAX_PARAMETER_AMOUNT) {
         // Error toast maybe
         return;
     }
@@ -128,7 +128,7 @@ void CaveyAudioProcessorEditor::renderParameterKnobs() const noexcept {
     auto screen = getLocalBounds();
     for (size_t i = 0; i < parameterKnobs.size(); ++i) {
         auto parameter = parameterKnobs[i];
-        parameter->setBounds(screen.removeFromTop(KNOB_INIT_Y_POS + KNOB_HEIGHT * i));
+        parameter->setBounds(screen.removeFromTop(CaveyUI::KNOB_INIT_Y_POS + CaveyUI::KNOB_HEIGHT * i));
     }
 }
 
