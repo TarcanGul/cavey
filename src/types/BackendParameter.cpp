@@ -11,8 +11,13 @@ void BackendParameter::setName(juce::String pName) {
     this->name = std::move(pName);
 }
 
-void BackendParameter::setCharacteristicCoefficients(std::map<BaseEffect, float> coefficients) {
-    this->characteristicCoefficients = std::move(coefficients);
+void BackendParameter::setCharacteristicCoefficients(const Cavey::CoefficientGroupInitializer& init) {
+
+    this->volume = { init.volume };
+    this->lowPass = { init.lowPass }; ;
+    this->highPass = { init.highPass }; ;
+    this->reverb = { init.reverb };
+    this->distortion = { init.distortion };
     calculateRanges();
 }
 
@@ -22,14 +27,13 @@ void BackendParameter::setCharacteristicCoefficients(std::map<BaseEffect, float>
  * @param effect
  * @return
  */
-std::optional<float> BackendParameter::getBaseEffectValue(BaseEffect effect) {
-    juce::String log1;
+std::optional<float> BackendParameter::getBaseEffectValue(Cavey::BaseEffect effect) {
     if (!baseEffectRanges.contains(effect)) {
         return {};
     }
 
-    float firstValue = baseEffectRanges[effect].first;
-    float secondValue = baseEffectRanges[effect].second;
+    float firstValue = baseEffectRanges[effect].low;
+    float secondValue = baseEffectRanges[effect].high;
 
     // If values are equal
     if (std::abs(firstValue - secondValue) <= EPSILON) {
@@ -53,40 +57,11 @@ BackendParameter::~BackendParameter() {
 }
 
 void BackendParameter::calculateRanges() {
-    baseEffectRanges[BaseEffect::VOLUME] = getVolumeRange(characteristicCoefficients[BaseEffect::VOLUME]);
-    baseEffectRanges[BaseEffect::LOW_PASS] = getLowPassRange(characteristicCoefficients[BaseEffect::LOW_PASS]);
-    baseEffectRanges[BaseEffect::HIGH_PASS] = getHighPassRange(characteristicCoefficients[BaseEffect::HIGH_PASS]);
-    baseEffectRanges[BaseEffect::REVERB] = getReverbRange(characteristicCoefficients[BaseEffect::REVERB]);
-    baseEffectRanges[BaseEffect::DISTORTION] = getDistortionRange(characteristicCoefficients[BaseEffect::DISTORTION]);
-}
-
-// coefficient range = 0-1
-std::pair<float, float> BackendParameter::getVolumeRange(float coefficient) {
-    // 0 -> {1.0 , 1.0}
-    // 1 -> {0.0, 1.0}
-    return {1.0 - coefficient, 1.0};
-}
-
-// This is going to give Hz.
-std::pair<float, float> BackendParameter::getLowPassRange(float coefficient) {
-    // 0 -> {20000 , 20000}
-    // 1 -> {20000, 1000}
-    return {20000, 20000 - (19900 * coefficient)};
-}
-
-// This is going to give Hz.
-std::pair<float, float> BackendParameter::getHighPassRange(float coefficient) {
-    // 0 -> {20 , 0}
-    // 1 -> {20, 20000}
-    return {20, (2000 * coefficient)};
-}
-
-std::pair<float, float> BackendParameter::getReverbRange(float coefficient) {
-    return { 0, coefficient };
-}
-
-std::pair<float, float> BackendParameter::getDistortionRange(float coefficient) {
-    return {0 , coefficient};
+    baseEffectRanges[Cavey::BaseEffect::VOLUME] = volume.getRange();
+    baseEffectRanges[Cavey::BaseEffect::LOW_PASS] = lowPass.getRange();
+    baseEffectRanges[Cavey::BaseEffect::HIGH_PASS] = highPass.getRange();
+    baseEffectRanges[Cavey::BaseEffect::REVERB] = reverb.getRange();
+    baseEffectRanges[Cavey::BaseEffect::DISTORTION] = distortion.getRange();
 }
 
 void BackendParameter::setParameterValue(float value) {

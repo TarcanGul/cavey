@@ -12,7 +12,7 @@ CaveyAudioProcessor::CaveyAudioProcessor()
         .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 #endif
 {
-    llm = static_cast<LLMController *>(new OllamaController());
+    llm = std::make_unique<OllamaController>();
 
     logger.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
     juce::Logger::setCurrentLogger(logger.get());
@@ -53,12 +53,18 @@ void CaveyAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) 
 
 void CaveyAudioProcessor::releaseResources() {}
 
-void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName, std::map<BaseEffect, float> coefficients) {
+void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients) {
     juce::Logger::writeToLog("Backend parameter" + parameterName.toStdString() + "is being added");
     auto * newBackendParameterValue = new juce::AudioParameterFloat(parameterName, parameterName, 0.0f, 1.0f, 0.0f);
     auto * newBackendParameter = new BackendParameter(newBackendParameterValue);
     newBackendParameter->setName(parameterName);
-    newBackendParameter->setCharacteristicCoefficients(std::move(coefficients));
+    newBackendParameter->setCharacteristicCoefficients({
+        .volume = coefficients.at(Cavey::BaseEffect::VOLUME),
+        .lowPass = coefficients.at(Cavey::BaseEffect::LOW_PASS),
+        .highPass = coefficients.at(Cavey::BaseEffect::HIGH_PASS),
+        .reverb = coefficients.at(Cavey::BaseEffect::REVERB),
+        .distortion = coefficients.at(Cavey::BaseEffect::DISTORTION),
+    });
     parameters.insert({ parameterName, newBackendParameter } );
     addParameter(newBackendParameterValue);
 }
@@ -104,19 +110,19 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
     float targetDistortionLevel = 0;
     for (const auto& parameterValue : parameters) {
         BackendParameter* parameter = parameterValue.second;
-        if (auto lowPassValue = parameter->getBaseEffectValue(BaseEffect::LOW_PASS)) {
+        if (auto lowPassValue = parameter->getBaseEffectValue(Cavey::BaseEffect::LOW_PASS)) {
             targetLowPassCutoffHz = *lowPassValue;
         }
-        if (auto highPassValue = parameter->getBaseEffectValue(BaseEffect::HIGH_PASS)) {
+        if (auto highPassValue = parameter->getBaseEffectValue(Cavey::BaseEffect::HIGH_PASS)) {
             targetHighPassCutoffHz = *highPassValue;
         }
-        if (auto gainValue = parameter->getBaseEffectValue(BaseEffect::VOLUME)) {
+        if (auto gainValue = parameter->getBaseEffectValue(Cavey::BaseEffect::VOLUME)) {
             targetGain = *gainValue;
         }
-        if (auto reverbValue = parameter->getBaseEffectValue(BaseEffect::REVERB)) {
+        if (auto reverbValue = parameter->getBaseEffectValue(Cavey::BaseEffect::REVERB)) {
             targetReverbWetLevel = *reverbValue;
         }
-        if (auto distortionValue = parameter->getBaseEffectValue(BaseEffect::DISTORTION)) {
+        if (auto distortionValue = parameter->getBaseEffectValue(Cavey::BaseEffect::DISTORTION)) {
             targetDistortionLevel = *distortionValue;
         }
     }
@@ -163,20 +169,23 @@ void CaveyAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
     juce::ignoreUnused(data, sizeInBytes);
 }
 
-void CaveyAudioProcessor::addCaveyParameter(juce::String prompt) {
+void CaveyAudioProcessor::addCaveyParameter(const juce::String& prompt) {
     // Do this part async
     const juce::String response = this->llm->prompt(prompt);
+
+    // Eval here.
+
     boost::system::error_code errorCode;
     const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
     const boost::json::object parsedResponse = readResponse.as_object();
     juce::String parameterName = juce::String(parsedResponse.at("NAME").get_string().c_str());
 
     this->addBackendParameter( parameterName, {
-            { BaseEffect::VOLUME, parsedResponse.at("VOLUME").get_double() },
-            { BaseEffect::LOW_PASS, parsedResponse.at("LOW_PASS").get_double() },
-            { BaseEffect::HIGH_PASS, parsedResponse.at("HIGH_PASS").get_double() },
-            { BaseEffect::REVERB, parsedResponse.at("REVERB").get_double() },
-            { BaseEffect::DISTORTION, parsedResponse.at("DISTORTION").get_double()}
+            { Cavey::BaseEffect::VOLUME, parsedResponse.at("VOLUME").get_double() },
+            { Cavey::BaseEffect::LOW_PASS, parsedResponse.at("LOW_PASS").get_double() },
+            { Cavey::BaseEffect::HIGH_PASS, parsedResponse.at("HIGH_PASS").get_double() },
+            { Cavey::BaseEffect::REVERB, parsedResponse.at("REVERB").get_double() },
+            { Cavey::BaseEffect::DISTORTION, parsedResponse.at("DISTORTION").get_double()}
     });
 
     sendActionMessage(parameterName);

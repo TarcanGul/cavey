@@ -45,12 +45,12 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     // Sends async message
-    void addCaveyParameter(juce::String prompt);
+    void addCaveyParameter(const juce::String& prompt);
 
     void setBackendParameterValue(const juce::String& parameterName, float value);
 private:
-    void addBackendParameter(const juce::String& parameterName, std::map<BaseEffect, float>);
-    LLMController * llm;
+    void addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients);
+    std::unique_ptr<LLMController> llm;
     std::map<juce::String, BackendParameter *> parameters;
     float lastCutoffHz { 20000.0f };
     float lastTargetGain {1.0};

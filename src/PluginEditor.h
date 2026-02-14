@@ -47,7 +47,7 @@ private:
 
     void sliderValueChanged(juce::Slider * slider) override;
 
-    void actionListenerCallback(const juce::String &message) override;
+    void actionListenerCallback(const juce::String& message) override;
 
     void setLoading(bool desiredLoadingState);
 

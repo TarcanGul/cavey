@@ -6,6 +6,7 @@
 
 #include <JuceHeader.h>
 #include "CaveyTypes.h"
+#include "../effects/CaveyEffects.h"
 
 /**
  * The actual parameter that determines the functionality
@@ -19,29 +20,30 @@ public:
     void setParameterValue(float value);
 
     void setName(juce::String name);
-    void setCharacteristicCoefficients(std::map<BaseEffect, float> coefficients);
+    void setCharacteristicCoefficients(const Cavey::CoefficientGroupInitializer& init);
 
-    std::optional<float> getBaseEffectValue(BaseEffect effect);
+    std::optional<float> getBaseEffectValue(Cavey::BaseEffect effect);
 private:
     constexpr static float EPSILON = 1e-9;
 
-    void calculateRanges();
+    // effects
+    Cavey::Volume volume { 0 } ;
+    Cavey::LowPass lowPass {0 };
+    Cavey::HighPass highPass {0 };
+    Cavey::Reverb reverb {0 };
+    Cavey::Distortion distortion {0 };
 
-    static std::pair<float, float> getVolumeRange(float coefficient);
-    static std::pair<float, float> getLowPassRange(float coefficient);
-    static std::pair<float, float> getHighPassRange(float coefficient);
-    static std::pair<float, float> getReverbRange(float coefficient);
-    static std::pair<float, float> getDistortionRange(float coefficient);
+    void calculateRanges();
 
     juce::String name;
     juce::AudioParameterFloat * parameterValue;
-    std::map<BaseEffect, float> characteristicCoefficients = {
-            {BaseEffect::VOLUME, 0.0f},
-            {BaseEffect::LOW_PASS, 0.0f},
-            { BaseEffect:: HIGH_PASS, 0.0f},
-            {BaseEffect::REVERB, 0.0f},
-            { BaseEffect::DISTORTION, 0.0f}
+    std::map<Cavey::BaseEffect, float> characteristicCoefficients = {
+            {Cavey::BaseEffect::VOLUME, 0.0f},
+            {Cavey::BaseEffect::LOW_PASS, 0.0f},
+            { Cavey::BaseEffect:: HIGH_PASS, 0.0f},
+            {Cavey::BaseEffect::REVERB, 0.0f},
+            { Cavey::BaseEffect::DISTORTION, 0.0f}
     };
 
-    std::map<BaseEffect, std::pair<float, float>> baseEffectRanges = {};
+    std::map<Cavey::BaseEffect, Cavey::Range> baseEffectRanges = {};
 };

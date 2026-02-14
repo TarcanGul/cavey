@@ -6,6 +6,7 @@ an array of base audio effect coefficients based on user prompt. These are base 
 - HIGH_PASS
 - LOW_PASS
 - REVERB
+- DISTORTION
 
 User can come up with many adjectives and definitions in his or her prompt. Try your best to interpret the intention and then
 generate the coefficient map.

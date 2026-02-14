@@ -5,11 +5,21 @@
 #pragma once
 #include <map>
 #include <JuceHeader.h>
+#include <utility>
 
-enum class BaseEffect {
-    VOLUME,
-    LOW_PASS,
-    HIGH_PASS,
-    REVERB,
-    DISTORTION
-};
+namespace Cavey {
+    enum class BaseEffect {
+        VOLUME,
+        LOW_PASS,
+        HIGH_PASS,
+        REVERB,
+        DISTORTION
+    };
+
+    struct Range {
+        double low {0.0};
+        double high {0.0};
+
+        Range(const double& low, const double& high) : low(low), high(high) {}
+    };
+}

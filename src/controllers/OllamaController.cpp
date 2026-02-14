@@ -11,7 +11,8 @@ OllamaController::OllamaController() {
     int dataSize = 0;
     const char * data = BinaryData::getNamedResource("SystemPrompt_md", dataSize);
     if (data && dataSize > 0) {
-        systemPrompt.assign(data,  static_cast<size_t>(dataSize));
+        systemPrompt = data;
+        // systemPrompt.assign(data,  static_cast<size_t>(dataSize));
     } else {
         juce::Logger::writeToLog("Cannot read system prompt");
     }
@@ -23,16 +24,16 @@ String OllamaController::prompt(const juce::String &prompt) {
     }
 
     // Recreate connection every time (http 1.0). More reliable
-    net::io_context ioc;
-    boost::beast::tcp_stream stream {ioc};
-    tcp::resolver resolver(ioc);
+    static net::io_context ioc;
+    static boost::beast::tcp_stream stream {ioc};
+    static tcp::resolver resolver(ioc);
     auto const results = resolver.resolve(OLLAMA_HOST, OLLAMA_PORT);
     stream.connect(results);
 
     juce::Logger::writeToLog("Processing prompt");
     juce::Logger::writeToLog(prompt.toStdString());
 
-    http::request<http::string_body> req{http::verb::post, std::string(API_BASE).append("/generate"), HTTP_VERSION};
+    http::request<http::string_body> req{http::verb::post, std::string(Cavey::API_BASE).append("/generate"), Cavey::HTTP_VERSION};
     req.set(http::field::host, OLLAMA_HOST);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     req.set(http::field::content_type, "application/json");
@@ -86,8 +87,6 @@ String OllamaController::prompt(const juce::String &prompt) {
 
     auto jsonPayload = respStr.substr(startPos, endPos - startPos);
     jsonPayload = boost::algorithm::trim_copy(jsonPayload);
-
-    std::cout << jsonPayload << std::endl;
     stream.close();
     return { jsonPayload };
 }
