@@ -6,8 +6,9 @@
 #include "controllers/OllamaController.h"
 
 CaveyAudioProcessor::CaveyAudioProcessor()
+    : apvts(*this, nullptr, juce::Identifier("Cavey"), {})
 #ifndef JucePlugin_PreferredChannelConfigurations
-    : AudioProcessor(BusesProperties()
+    , AudioProcessor(BusesProperties()
         .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
         .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 #endif
@@ -57,6 +58,7 @@ void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName,
     juce::Logger::writeToLog("Backend parameter" + parameterName.toStdString() + "is being added");
     auto * newBackendParameterValue = new juce::AudioParameterFloat(parameterName, parameterName, 0.0f, 1.0f, 0.0f);
     auto * newBackendParameter = new BackendParameter(newBackendParameterValue);
+    apvts.createAndAddParameter(std::make_unique<juce::AudioParameterFloat>(newBackendParameterValue));
     newBackendParameter->setName(parameterName);
     newBackendParameter->setCharacteristicCoefficients({
         .volume = coefficients.at(Cavey::BaseEffect::VOLUME),

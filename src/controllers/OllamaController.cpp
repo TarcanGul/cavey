@@ -47,6 +47,7 @@ String OllamaController::prompt(const juce::String &prompt) {
     jsonBody["prompt"] = actualPrompt;
     jsonBody["stream"] = false;
 
+    // req.body() returns lvalue reference
     req.body() = boost::json::serialize(jsonBody);
     req.prepare_payload();
 

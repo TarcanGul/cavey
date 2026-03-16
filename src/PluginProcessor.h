@@ -49,6 +49,9 @@ public:
 
     void setBackendParameterValue(const juce::String& parameterName, float value);
 private:
+    juce::AudioProcessorValueTreeState apvts;
+
+    // TODO: Maybe a struct instead of `const std::map<Cavey::BaseEffect, float>& coefficients`?
     void addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients);
     std::unique_ptr<LLMController> llm;
     std::map<juce::String, BackendParameter *> parameters;
