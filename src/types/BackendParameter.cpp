@@ -5,19 +5,19 @@
 #include <optional>
 #include <utility>
 
-BackendParameter::BackendParameter(juce::AudioParameterFloat *parameterValue) : parameterValue(parameterValue) {}
+BackendParameter::BackendParameter(std::unique_ptr<juce::AudioParameterFloat> parameterValue) : parameterValue(std::move(parameterValue)) {}
 
-void BackendParameter::setName(juce::String pName) {
-    this->name = std::move(pName);
+void BackendParameter::setName(const juce::String& pName) {
+    this->name = pName;
 }
 
 void BackendParameter::setCharacteristicCoefficients(const Cavey::CoefficientGroupInitializer& init) {
 
-    this->volume = { init.volume };
-    this->lowPass = { init.lowPass }; ;
-    this->highPass = { init.highPass }; ;
-    this->reverb = { init.reverb };
-    this->distortion = { init.distortion };
+    this->volume.coefficient = init.volume;
+    this->lowPass.coefficient = init.lowPass;
+    this->highPass.coefficient = init.highPass;
+    this->reverb.coefficient = init.reverb;
+    this->distortion.coefficient = init.distortion;
     calculateRanges();
 }
 
@@ -27,13 +27,13 @@ void BackendParameter::setCharacteristicCoefficients(const Cavey::CoefficientGro
  * @param effect
  * @return
  */
-std::optional<double> BackendParameter::getBaseEffectValue(Cavey::BaseEffect effect) {
+std::optional<float> BackendParameter::getBaseEffectValue(Cavey::BaseEffect effect) {
     if (!baseEffectRanges.contains(effect)) {
         return {};
     }
 
-    double firstValue = baseEffectRanges.at(effect).low;
-    double secondValue = baseEffectRanges.at(effect).high;
+    float firstValue = baseEffectRanges.at(effect).low;
+    float secondValue = baseEffectRanges.at(effect).high;
 
     // If values are equal
     if (juce::approximatelyEqual(firstValue, secondValue)) {
@@ -47,23 +47,10 @@ juce::String BackendParameter::getName() {
     return this->name;
 }
 
-
-juce::AudioParameterFloat *BackendParameter::getParameterValue() {
-    return parameterValue;
-}
-
-BackendParameter::~BackendParameter() {
-    delete parameterValue;
-}
-
 void BackendParameter::calculateRanges() {
     baseEffectRanges.at(Cavey::BaseEffect::VOLUME) = volume.getRange();
     baseEffectRanges.at(Cavey::BaseEffect::LOW_PASS) = lowPass.getRange();
     baseEffectRanges.at(Cavey::BaseEffect::HIGH_PASS) = highPass.getRange();
     baseEffectRanges.at(Cavey::BaseEffect::REVERB) = reverb.getRange();
     baseEffectRanges.at(Cavey::BaseEffect::DISTORTION) = distortion.getRange();
-}
-
-void BackendParameter::setParameterValue(float value) {
-     * parameterValue = value;
 }

@@ -57,7 +57,7 @@ void CaveyAudioProcessor::releaseResources() {}
 void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients) {
     juce::Logger::writeToLog("Backend parameter" + parameterName.toStdString() + "is being added");
     auto newBackendParameterValue = std::make_unique<juce::AudioParameterFloat>(parameterName, parameterName, 0.0f, 1.0f, 0.0f);
-    auto newBackendParameter = std::make_unique<BackendParameter>(newBackendParameterValue.get());
+    auto newBackendParameter = std::make_unique<BackendParameter>(std::move(newBackendParameterValue));
     // Note: upcasting happens in std::move
     apvts.createAndAddParameter(std::move(newBackendParameterValue));
     newBackendParameter->setName(parameterName);
@@ -73,12 +73,14 @@ void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName,
 }
 
 void CaveyAudioProcessor::setBackendParameterValue(const juce::String& parameterName, float value) {
-    auto parameter = parameters.at(parameterName);
+    // auto parameter = parameters.at(parameterName);
+    auto parameter = apvts.getParameter(parameterName);
     if (parameter == nullptr) {
         juce::Logger::writeToLog(parameterName + " cannot be found in the parameters map!");
         throw std::invalid_argument(parameterName.toStdString() + " cannot be found in the parameters map!");
     }
-    parameter->setParameterValue(value);
+    parameter->setValue(value);
+    // parameter->setParameterValue(value);
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations

@@ -10,45 +10,45 @@
 namespace Cavey {
 
     struct CoefficientGroupInitializer {
-        double volume = 0;
-        double lowPass = 0;
-        double highPass = 0;
-        double reverb = 0;
-        double distortion = 0;
+        float volume = 0.0f;
+        float lowPass = 0.0f;
+        float highPass = 0.0f;
+        float reverb = 0.0f;
+        float distortion = 0.0f;
     };
 
     struct Volume {
-        double coefficient {0.0};
-        Range getRange();
+        float coefficient {0.0f};
+        [[nodiscard]] Range getRange() const;
 
-        Volume (double coefficient) : coefficient(coefficient) {}
+        explicit Volume (float coefficient) : coefficient(coefficient) {}
     };
 
     struct LowPass {
-        double coefficient {0.0};
-        Range getRange();
+        float coefficient {0.0f};
+        [[nodiscard]] Range getRange() const;
 
-        LowPass (double coefficient) : coefficient(coefficient) {}
+        explicit LowPass (float coefficient) : coefficient(coefficient) {}
     };
 
     struct HighPass {
-        double coefficient {0.0};
-        Range getRange();
+        float coefficient {0.0f};
+        [[nodiscard]] Range getRange() const;
 
-        HighPass (double coefficient) : coefficient(coefficient) {}
+        explicit HighPass (float coefficient) : coefficient(coefficient) {}
     };
 
     struct Reverb {
-        double coefficient {0.0};
-        Range getRange();
+        float coefficient {0.0f};
+        [[nodiscard]] Range getRange() const;
 
-        Reverb (double coefficient) : coefficient(coefficient) {}
+        explicit Reverb (float coefficient) : coefficient(coefficient) {}
     };
 
     struct Distortion {
-        double coefficient {0.0};
-        Range getRange();
+        float coefficient {0.0f};
+        [[nodiscard]] Range getRange() const;
 
-        Distortion (double coefficient) : coefficient(coefficient) {}
+        explicit Distortion (float coefficient) : coefficient(coefficient) {}
     };
 }

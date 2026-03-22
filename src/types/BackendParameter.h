@@ -13,19 +13,15 @@
  */
 class BackendParameter {
 public:
-    explicit BackendParameter(juce::AudioParameterFloat * parameterValue);
-    ~BackendParameter();
+    explicit BackendParameter(std::unique_ptr<juce::AudioParameterFloat> parameterValue);
+    ~BackendParameter() = default;
     juce::String getName();
-    juce::AudioParameterFloat * getParameterValue();
-    void setParameterValue(float value);
 
-    void setName(juce::String name);
+    void setName(const juce::String& name);
     void setCharacteristicCoefficients(const Cavey::CoefficientGroupInitializer& init);
 
-    std::optional<double> getBaseEffectValue(Cavey::BaseEffect effect);
+    std::optional<float> getBaseEffectValue(Cavey::BaseEffect effect);
 private:
-    constexpr static float EPSILON = 1e-9;
-
     // effects
     Cavey::Volume volume { 0 } ;
     Cavey::LowPass lowPass {0 };
@@ -35,8 +31,8 @@ private:
 
     void calculateRanges();
 
-    juce::String name;
-    juce::AudioParameterFloat * parameterValue;
+    juce::String name {};
+    std::unique_ptr<juce::AudioParameterFloat> parameterValue;
     std::map<Cavey::BaseEffect, float> characteristicCoefficients = {
             {Cavey::BaseEffect::VOLUME, 0.0f},
             {Cavey::BaseEffect::LOW_PASS, 0.0f},
@@ -45,5 +41,5 @@ private:
             { Cavey::BaseEffect::DISTORTION, 0.0f}
     };
 
-    std::map<Cavey::BaseEffect, Cavey::Range> baseEffectRanges = {};
+    std::map<Cavey::BaseEffect, Cavey::Range> baseEffectRanges{};
 };

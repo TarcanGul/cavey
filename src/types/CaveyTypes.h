@@ -17,9 +17,9 @@ namespace Cavey {
     };
 
     struct Range {
-        double low {0.0};
-        double high {0.0};
+        float low {0.0f};
+        float high {0.0f};
 
-        Range(const double low, const double high) : low(low), high(high) {}
+        Range(const float low, const float high) : low(low), high(high) {}
     };
 }
