@@ -22,7 +22,7 @@ public:
     void setName(juce::String name);
     void setCharacteristicCoefficients(const Cavey::CoefficientGroupInitializer& init);
 
-    std::optional<float> getBaseEffectValue(Cavey::BaseEffect effect);
+    std::optional<double> getBaseEffectValue(Cavey::BaseEffect effect);
 private:
     constexpr static float EPSILON = 1e-9;
 

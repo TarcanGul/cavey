@@ -95,18 +95,16 @@ void CaveyAudioProcessorEditor::sliderValueChanged(juce::Slider *slider) {
 }
 
 void CaveyAudioProcessorEditor::whenRemoveParameterButtonClicked(Parameter * parameterGroup) {
-    Slider * parameter = parameterGroup->getSlider();
-    Button * removeButton = parameterGroup->getRemoveButton();
+    Button& removeButton = parameterGroup->getRemoveButton();
     const auto newListHead = std::remove_if(
             parameterKnobs.begin(),
             parameterKnobs.end(),
-            [parameter, removeButton](Parameter * parameterKnob) {
-                return parameterKnob->getSlider() == parameter &&
-                parameterKnob->getRemoveButton() == removeButton;
+            [&](Parameter * parameterKnob) {
+                return parameterKnob == parameterGroup;
             }
         );
     parameterKnobs.erase(newListHead, parameterKnobs.end());
-    removeButton->removeListener(this);
+    removeButton.removeListener(this);
     delete parameterGroup;
     parameterRemoved();
 }
@@ -144,7 +142,7 @@ void CaveyAudioProcessorEditor::actionListenerCallback(const juce::String &messa
     auto * parameter = new Parameter(parameterName);
     parameter->setLabel(parameterName);
     parameter->setRemoveButtonListener(this);
-    parameter->getSlider()->addListener(this);
+    parameter->getSlider().addListener(this);
 
     juce::Logger::writeToLog("Parameter is added via the callback");
 
@@ -158,10 +156,10 @@ void CaveyAudioProcessorEditor::actionListenerCallback(const juce::String &messa
     generateButton.setEnabled(true);
 }
 
-std::optional<Parameter *> CaveyAudioProcessorEditor::getParameterGroup(Button *buttonRef) {
+std::optional<Parameter *> CaveyAudioProcessorEditor::getParameterGroup(Button* buttonRef) {
     for (auto parameter : parameterKnobs) {
-        Button * removeButton = parameter->getRemoveButton();
-        if (removeButton == buttonRef)
+        Button& removeButton = parameter->getRemoveButton();
+        if (std::addressof(removeButton) == buttonRef)
             return parameter;
     }
 

@@ -3,9 +3,9 @@
 //
 #include "Parameter.h"
 Parameter::Parameter(const juce::String& name) {
-    slider_ = new Slider();
-    removeButton_ = new TextButton();
-    label_ = new Label();
+    slider_ = std::make_unique<Slider>();
+    removeButton_ = std::make_unique<TextButton>();
+    label_ = std::make_unique<Label>();
     label_->setText("unnamed", NotificationType::dontSendNotification);
 
     slider_->setSliderStyle(juce::Slider::SliderStyle::Rotary);
@@ -15,23 +15,17 @@ Parameter::Parameter(const juce::String& name) {
 
     removeButton_->setButtonText("Remove Parameter");
 
-    addAndMakeVisible(slider_);
-    addAndMakeVisible(label_);
-    addAndMakeVisible(removeButton_);
+    addAndMakeVisible(slider_.get());
+    addAndMakeVisible(label_.get());
+    addAndMakeVisible(removeButton_.get());
 }
 
-Parameter::~Parameter() {
-    delete slider_;
-    delete removeButton_;
-    delete label_;
+Slider& Parameter::getSlider() {
+    return *slider_;
 }
 
-Slider *Parameter::getSlider() {
-    return slider_;
-}
-
-Button * Parameter::getRemoveButton() {
-    return removeButton_;
+Button& Parameter::getRemoveButton() {
+    return *removeButton_;
 }
 
 void Parameter::setRemoveButtonListener(Button::Listener * listener) {

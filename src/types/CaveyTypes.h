@@ -20,6 +20,6 @@ namespace Cavey {
         double low {0.0};
         double high {0.0};
 
-        Range(const double& low, const double& high) : low(low), high(high) {}
+        Range(const double low, const double high) : low(low), high(high) {}
     };
 }

@@ -2,8 +2,7 @@
 // Created by Tarcan Gul on 2/7/26.
 //
 
-#ifndef CAVEYPLUGIN_CAVEYEFFECTS_H
-#define CAVEYPLUGIN_CAVEYEFFECTS_H
+#pragma once
 
 #include <utility>
 #include "../types/CaveyTypes.h"
@@ -53,9 +52,3 @@ namespace Cavey {
         Distortion (double coefficient) : coefficient(coefficient) {}
     };
 }
-
-
-
-
-
-#endif //CAVEYPLUGIN_CAVEYEFFECTS_H

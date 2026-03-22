@@ -18,7 +18,7 @@ else()
     FetchContent_Declare(
       juce
       GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-      GIT_TAG 7.0.12
+      GIT_TAG 8.0.12
     )
     FetchContent_MakeAvailable(juce)
 endif()
@@ -50,6 +50,8 @@ target_sources(CaveyPlugin PRIVATE
     src/components/Parameter.cpp
     src/components/LoadingComponent.cpp
     src/controllers/OllamaController.cpp
+    src/effects/CaveyEffects.cpp
+
     src/controllers/SystemPrompt.md
 )
 

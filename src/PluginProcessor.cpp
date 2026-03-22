@@ -56,9 +56,10 @@ void CaveyAudioProcessor::releaseResources() {}
 
 void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients) {
     juce::Logger::writeToLog("Backend parameter" + parameterName.toStdString() + "is being added");
-    auto * newBackendParameterValue = new juce::AudioParameterFloat(parameterName, parameterName, 0.0f, 1.0f, 0.0f);
-    auto * newBackendParameter = new BackendParameter(newBackendParameterValue);
-    apvts.createAndAddParameter(std::make_unique<juce::AudioParameterFloat>(newBackendParameterValue));
+    auto newBackendParameterValue = std::make_unique<juce::AudioParameterFloat>(parameterName, parameterName, 0.0f, 1.0f, 0.0f);
+    auto newBackendParameter = std::make_unique<BackendParameter>(newBackendParameterValue.get());
+    // Note: upcasting happens in std::move
+    apvts.createAndAddParameter(std::move(newBackendParameterValue));
     newBackendParameter->setName(parameterName);
     newBackendParameter->setCharacteristicCoefficients({
         .volume = coefficients.at(Cavey::BaseEffect::VOLUME),
@@ -67,8 +68,8 @@ void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName,
         .reverb = coefficients.at(Cavey::BaseEffect::REVERB),
         .distortion = coefficients.at(Cavey::BaseEffect::DISTORTION),
     });
-    parameters.insert({ parameterName, newBackendParameter } );
-    addParameter(newBackendParameterValue);
+    parameters.insert({ parameterName, newBackendParameter.get() } );
+    addParameter(newBackendParameterValue.get());
 }
 
 void CaveyAudioProcessor::setBackendParameterValue(const juce::String& parameterName, float value) {
