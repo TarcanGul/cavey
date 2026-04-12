@@ -48,6 +48,7 @@ public:
     void addCaveyParameter(const juce::String& prompt);
 
     void setBackendParameterValue(const juce::String& parameterName, float value);
+    juce::AudioProcessorValueTreeState& getValueTree();
 private:
     juce::AudioProcessorValueTreeState apvts;
 

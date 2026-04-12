@@ -6,11 +6,12 @@
 #include "controllers/OllamaController.h"
 
 CaveyAudioProcessor::CaveyAudioProcessor()
-    : apvts(*this, nullptr, juce::Identifier("Cavey"), {})
+    :
 #ifndef JucePlugin_PreferredChannelConfigurations
-    , AudioProcessor(BusesProperties()
+    AudioProcessor(BusesProperties()
         .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-        .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+    apvts(*this, nullptr, juce::Identifier("Cavey"), {})
 #endif
 {
     llm = std::make_unique<OllamaController>();
@@ -194,6 +195,10 @@ void CaveyAudioProcessor::addCaveyParameter(const juce::String& prompt) {
     });
 
     sendActionMessage(parameterName);
+}
+
+juce::AudioProcessorValueTreeState& CaveyAudioProcessor::getValueTree() {
+    return apvts;
 }
 
 // This creates new instances of the plugin

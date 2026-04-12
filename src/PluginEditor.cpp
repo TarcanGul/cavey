@@ -139,7 +139,7 @@ void CaveyAudioProcessorEditor::actionListenerCallback(const juce::String &messa
     // Right now it is hardcoded, only processor will send parameter name, can be changed later
     const juce::String parameterName {message};
 
-    auto * parameter = new Parameter(parameterName);
+    auto * parameter = new Parameter(parameterName, audioProcessor.getValueTree());
     parameter->setLabel(parameterName);
     parameter->setRemoveButtonListener(this);
     parameter->getSlider().addListener(this);

@@ -2,8 +2,9 @@
 // Created by Tarcan Gul on 10/19/25.
 //
 #include "Parameter.h"
-Parameter::Parameter(const juce::String& name) {
+Parameter::Parameter(const juce::String& name, juce::AudioProcessorValueTreeState& valueTree) {
     slider_ = std::make_unique<Slider>();
+    sliderAttachment_ = std::make_unique<SliderAttachment>(valueTree, name, *slider_);
     removeButton_ = std::make_unique<TextButton>();
     label_ = std::make_unique<Label>();
     label_->setText("unnamed", NotificationType::dontSendNotification);
@@ -39,6 +40,6 @@ void Parameter::resized() {
     removeButton_->setBounds(componentBounds.removeFromRight(REMOVE_BUTTON_WIDTH) );
 }
 
-void Parameter::setLabel(juce::String label) {
+void Parameter::setLabel(const juce::String& label) {
     label_->setText(label, NotificationType::dontSendNotification);
 }
