@@ -8,7 +8,7 @@
 Cavey::Range Cavey::Volume::getRange() const {
     // 0 -> {1.0 , 1.0}
     // 1 -> {0.0, 1.0}
-    return {1.0f - this->coefficient, 1.0};
+    return {1.0f - coefficient, 1.0};
 }
 
 Cavey::Range Cavey::LowPass::getRange() const {

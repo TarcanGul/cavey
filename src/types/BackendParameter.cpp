@@ -48,9 +48,9 @@ juce::String BackendParameter::getName() {
 }
 
 void BackendParameter::calculateRanges() {
-    baseEffectRanges.at(Cavey::BaseEffect::VOLUME) = volume.getRange();
-    baseEffectRanges.at(Cavey::BaseEffect::LOW_PASS) = lowPass.getRange();
-    baseEffectRanges.at(Cavey::BaseEffect::HIGH_PASS) = highPass.getRange();
-    baseEffectRanges.at(Cavey::BaseEffect::REVERB) = reverb.getRange();
-    baseEffectRanges.at(Cavey::BaseEffect::DISTORTION) = distortion.getRange();
+    baseEffectRanges.insert_or_assign(Cavey::BaseEffect::VOLUME, volume.getRange());
+    baseEffectRanges.insert_or_assign(Cavey::BaseEffect::LOW_PASS, lowPass.getRange());
+    baseEffectRanges.insert_or_assign(Cavey::BaseEffect::HIGH_PASS, highPass.getRange());
+    baseEffectRanges.insert_or_assign(Cavey::BaseEffect::REVERB, reverb.getRange());
+    baseEffectRanges.insert_or_assign(Cavey::BaseEffect::DISTORTION, distortion.getRange());
 }

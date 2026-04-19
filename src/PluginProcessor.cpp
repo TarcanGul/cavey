@@ -70,6 +70,7 @@ void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName,
         .distortion = coefficients.at(Cavey::BaseEffect::DISTORTION),
     });
     parameters.insert({ parameterName, newBackendParameter.get() } );
+    // TODO: bug here
     addParameter(newBackendParameterValue.get());
 }
 
