@@ -56,7 +56,7 @@ private:
     void addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients);
     std::unique_ptr<LLMController> llm;
     // TODO: look here later to see if you can get rid of the pointer
-    std::map<juce::String, BackendParameter *> parameters;
+    std::map<juce::String, std::unique_ptr<BackendParameter>> parameters;
     float lastCutoffHz { 20000.0f };
     float lastTargetGain {1.0};
 

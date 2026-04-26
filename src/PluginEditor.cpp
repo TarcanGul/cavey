@@ -50,7 +50,7 @@ void CaveyAudioProcessorEditor::resized() {
 
     if (parameterKnobs.empty()) {
         mainLabel.setVisible(true);
-        mainLabel.setBounds(screen.withSizeKeepingCentre(mainLabel.getFont().getStringWidth(CaveyUI::MAIN_LABEL_TEXT), 20));
+        mainLabel.setBounds(screen.withSizeKeepingCentre(juce::GlyphArrangement::getStringWidthInt(mainLabel.getFont(), CaveyUI::MAIN_LABEL_TEXT), 20));
     } else {
         renderParameterKnobs();
     }

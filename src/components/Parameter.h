@@ -27,9 +27,7 @@ private:
     static constexpr int LABEL_WIDTH = 100;
 
     std::unique_ptr<Label> label_;
-
     std::unique_ptr<Slider> slider_;
     std::unique_ptr<SliderAttachment> sliderAttachment_;
-
     std::unique_ptr<Button> removeButton_;
 };
