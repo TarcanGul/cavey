@@ -5,7 +5,7 @@
 #include <optional>
 #include <utility>
 
-BackendParameter::BackendParameter(std::unique_ptr<juce::AudioParameterFloat> parameterValue) : parameterValue(std::move(parameterValue)) {}
+BackendParameter::BackendParameter(const juce::AudioParameterFloat& parameterValue) : parameterValue(parameterValue) {}
 
 void BackendParameter::setName(const juce::String& pName) {
     this->name = pName;
@@ -40,7 +40,7 @@ std::optional<float> BackendParameter::getBaseEffectValue(Cavey::BaseEffect effe
         return firstValue;
     }
 
-    return firstValue - ((firstValue - secondValue) * parameterValue->get());
+    return firstValue - ((firstValue - secondValue) * parameterValue);
 }
 
 juce::String BackendParameter::getName() {
@@ -53,4 +53,8 @@ void BackendParameter::calculateRanges() {
     baseEffectRanges.insert_or_assign(Cavey::BaseEffect::HIGH_PASS, highPass.getRange());
     baseEffectRanges.insert_or_assign(Cavey::BaseEffect::REVERB, reverb.getRange());
     baseEffectRanges.insert_or_assign(Cavey::BaseEffect::DISTORTION, distortion.getRange());
+}
+
+const juce::AudioParameterFloat& BackendParameter::getParameter() {
+    return parameterValue;
 }

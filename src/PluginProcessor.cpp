@@ -58,9 +58,13 @@ void CaveyAudioProcessor::releaseResources() {}
 void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients) {
     juce::Logger::writeToLog("Backend parameter" + parameterName.toStdString() + "is being added");
     auto newBackendParameterValue = std::make_unique<juce::AudioParameterFloat>(parameterName, parameterName, 0.0f, 1.0f, 0.0f);
-    auto newBackendParameter = std::make_unique<BackendParameter>(std::move(newBackendParameterValue));
-    // Note: upcasting happens in std::move
     apvts.createAndAddParameter(std::move(newBackendParameterValue));
+    const juce::AudioParameterFloat * paramRef = dynamic_cast<juce::AudioParameterFloat *>(apvts.getParameter(parameterName));
+    if (paramRef == nullptr) {
+        throw std::runtime_error("paramRef is null");
+    }
+    auto newBackendParameter = std::make_unique<BackendParameter>(*paramRef);
+
     newBackendParameter->setName(parameterName);
     newBackendParameter->setCharacteristicCoefficients({
         .volume = coefficients.at(Cavey::BaseEffect::VOLUME),
@@ -69,9 +73,8 @@ void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName,
         .reverb = coefficients.at(Cavey::BaseEffect::REVERB),
         .distortion = coefficients.at(Cavey::BaseEffect::DISTORTION),
     });
-    parameters.insert({ parameterName, newBackendParameter.get() } );
-    // TODO: bug here
-    addParameter(newBackendParameterValue.get());
+
+    parameters.insert({ parameterName, std::move(newBackendParameter) });
 }
 
 void CaveyAudioProcessor::setBackendParameterValue(const juce::String& parameterName, float value) {
@@ -116,7 +119,8 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
     float targetReverbWetLevel = 0;
     float targetDistortionLevel = 0;
     for (const auto& parameterValue : parameters) {
-        BackendParameter* parameter = parameterValue.second;
+        // TODO: look here
+        BackendParameter* parameter = parameterValue.second.get();
         if (auto lowPassValue = parameter->getBaseEffectValue(Cavey::BaseEffect::LOW_PASS)) {
             targetLowPassCutoffHz = *lowPassValue;
         }
