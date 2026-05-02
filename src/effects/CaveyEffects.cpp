@@ -30,3 +30,7 @@ Cavey::Range Cavey::Reverb::getRange() const {
 Cavey::Range Cavey::Distortion::getRange() const {
     return {0 , coefficient };
 }
+
+Cavey::Range Cavey::Chorus::getRange() const noexcept {
+    return {0, coefficient};
+}

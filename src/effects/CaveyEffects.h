@@ -15,6 +15,7 @@ namespace Cavey {
         float highPass = 0.0f;
         float reverb = 0.0f;
         float distortion = 0.0f;
+        float chorus = 0.0f;
     };
 
     struct Volume {
@@ -50,5 +51,12 @@ namespace Cavey {
         [[nodiscard]] Range getRange() const;
 
         explicit Distortion (float coefficient) : coefficient(coefficient) {}
+    };
+
+    struct Chorus {
+        float coefficient {0.0f};
+        [[nodiscard]] Range getRange() const noexcept;
+
+        explicit Chorus (float coefficient) : coefficient(coefficient) {}
     };
 }

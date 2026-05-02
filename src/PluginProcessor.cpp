@@ -50,6 +50,12 @@ void CaveyAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) 
     auto& distortion = processorChain.get<distortionIndex>();
     distortion.functionToUse = [](float x) { return std::tanh(x); };
 
+    auto& chorus = processorChain.get<chorusIndex>();
+    chorus.setCentreDelay(10);
+    chorus.setRate(1);
+    chorus.setDepth(0.5);
+    chorus.setFeedback(0.0);
+
     processorChain.reset();
 }
 
@@ -72,6 +78,7 @@ void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName,
         .highPass = coefficients.at(Cavey::BaseEffect::HIGH_PASS),
         .reverb = coefficients.at(Cavey::BaseEffect::REVERB),
         .distortion = coefficients.at(Cavey::BaseEffect::DISTORTION),
+        .chorus = coefficients.at(Cavey::BaseEffect::CHORUS)
     });
 
     parameters.insert({ parameterName, std::move(newBackendParameter) });
@@ -110,12 +117,12 @@ bool CaveyAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) con
 
 void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
-    // Collect target cutoff and gain from parameters (use first/only for now)
     float targetLowPassCutoffHz = lastCutoffHz;
     float targetHighPassCutoffHz = 20.0f;
     float targetGain = lastTargetGain;
-    float targetReverbWetLevel = 0;
-    float targetDistortionLevel = 0;
+    float targetReverbWetLevel {0.0f};
+    float targetDistortionLevel {0.0f};
+    float targetChorus {0.0f};
     for (const auto& parameterValue : parameters) {
         // TODO: look here
         BackendParameter* parameter = parameterValue.second.get();
@@ -133,6 +140,9 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
         }
         if (auto distortionValue = parameter->getBaseEffectValue(Cavey::BaseEffect::DISTORTION)) {
             targetDistortionLevel = *distortionValue;
+        }
+        if (auto chorusValue = parameter->getBaseEffectValue(Cavey::BaseEffect::CHORUS)) {
+            targetChorus = *chorusValue;
         }
     }
 
@@ -155,6 +165,9 @@ void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::M
 
     auto& drive = processorChain.get<driveIndex>();
     drive.setGainLinear(juce::Decibels::decibelsToGain(targetDistortionLevel * 24.0f));
+
+    auto& chorus = processorChain.get<chorusIndex>();
+    chorus.setMix(targetChorus);
 
     juce::dsp::AudioBlock<float> audioBlock(buffer);
     juce::dsp::ProcessContextReplacing<float> context(audioBlock);
@@ -182,8 +195,6 @@ void CaveyAudioProcessor::addCaveyParameter(const juce::String& prompt) {
     // Do this part async
     const juce::String response = this->llm->prompt(prompt);
 
-    // Eval here.
-
     boost::system::error_code errorCode;
     const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
     const boost::json::object parsedResponse = readResponse.as_object();
@@ -194,7 +205,8 @@ void CaveyAudioProcessor::addCaveyParameter(const juce::String& prompt) {
             { Cavey::BaseEffect::LOW_PASS, parsedResponse.at("LOW_PASS").get_double() },
             { Cavey::BaseEffect::HIGH_PASS, parsedResponse.at("HIGH_PASS").get_double() },
             { Cavey::BaseEffect::REVERB, parsedResponse.at("REVERB").get_double() },
-            { Cavey::BaseEffect::DISTORTION, parsedResponse.at("DISTORTION").get_double()}
+            { Cavey::BaseEffect::DISTORTION, parsedResponse.at("DISTORTION").get_double()},
+            { Cavey::BaseEffect::CHORUS, parsedResponse.contains("CHORUS") ? parsedResponse.at("CHORUS").get_double() : 0.0}
     });
 
     sendActionMessage(parameterName);

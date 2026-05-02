@@ -13,7 +13,8 @@ namespace Cavey {
         LOW_PASS,
         HIGH_PASS,
         REVERB,
-        DISTORTION
+        DISTORTION,
+        CHORUS
     };
 
     struct Range {

@@ -66,15 +66,17 @@ private:
         gainIndex,
         reverbIndex,
         driveIndex,
-        distortionIndex
+        distortionIndex,
+        chorusIndex
     };
     juce::dsp::ProcessorChain<
         juce::dsp::LadderFilter<float>,
         juce::dsp::LadderFilter<float>,
         juce::dsp::Gain<float>,
         juce::dsp::Reverb,
-        juce::dsp::Gain<float>, // For distortion
-        juce::dsp::WaveShaper<float>
+        juce::dsp::Gain<float>,
+        juce::dsp::WaveShaper<float>,
+        juce::dsp::Chorus<float>
     > processorChain;
 
     std::unique_ptr<juce::FileLogger> logger;

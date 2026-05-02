@@ -18,6 +18,7 @@ void BackendParameter::setCharacteristicCoefficients(const Cavey::CoefficientGro
     this->highPass.coefficient = init.highPass;
     this->reverb.coefficient = init.reverb;
     this->distortion.coefficient = init.distortion;
+    this->chorus.coefficient = init.chorus;
     calculateRanges();
 }
 
@@ -53,6 +54,7 @@ void BackendParameter::calculateRanges() {
     baseEffectRanges.insert_or_assign(Cavey::BaseEffect::HIGH_PASS, highPass.getRange());
     baseEffectRanges.insert_or_assign(Cavey::BaseEffect::REVERB, reverb.getRange());
     baseEffectRanges.insert_or_assign(Cavey::BaseEffect::DISTORTION, distortion.getRange());
+    baseEffectRanges.insert_or_assign(Cavey::BaseEffect::CHORUS, chorus.getRange());
 }
 
 const juce::AudioParameterFloat& BackendParameter::getParameter() {

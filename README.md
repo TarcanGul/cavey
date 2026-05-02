@@ -43,3 +43,4 @@ Notes
 - AAX is not enabled by default as it requires the Avid SDK.
 - You can adjust plugin formats in CMakeLists.txt under FORMATS.
 - The GUI text and size are set in src/PluginEditor.cpp.
+- The logs are written in ~/Library/Logs/Cavey/cavey.log (in Mac)

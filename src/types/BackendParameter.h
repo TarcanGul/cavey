@@ -29,18 +29,12 @@ private:
     Cavey::HighPass highPass {0 };
     Cavey::Reverb reverb {0 };
     Cavey::Distortion distortion {0 };
+    Cavey::Chorus chorus {0};
 
     void calculateRanges();
 
     juce::String name {};
     const juce::AudioParameterFloat& parameterValue;
-    std::map<Cavey::BaseEffect, float> characteristicCoefficients = {
-            {Cavey::BaseEffect::VOLUME, 0.0f},
-            {Cavey::BaseEffect::LOW_PASS, 0.0f},
-            { Cavey::BaseEffect:: HIGH_PASS, 0.0f},
-            {Cavey::BaseEffect::REVERB, 0.0f},
-            { Cavey::BaseEffect::DISTORTION, 0.0f}
-    };
 
     std::map<Cavey::BaseEffect, Cavey::Range> baseEffectRanges{};
 };

@@ -7,6 +7,7 @@ an array of base audio effect coefficients based on user prompt. These are base 
 - LOW_PASS
 - REVERB
 - DISTORTION
+- CHORUS
 
 User can come up with many adjectives and definitions in his or her prompt. Try your best to interpret the intention and then
 generate the coefficient map.
@@ -24,7 +25,8 @@ Desired output format in json:
   "HIGH_PASS": "double, [0-1]",
   "LOW_PASS": "double, [0-1]",
   "REVERB": "double, [0-1]",
-  "DISTORTION": "double, [0-1]"
+  "DISTORTION": "double, [0-1]",
+  "CHORUS": "double, [0-1]"
 }
 ```
 
@@ -49,6 +51,7 @@ Example Answer:
 "LOW_PASS": 0.8,
 "REVERB": 0.0,
 "DISTORTION": 0.2,
+"CHORUS": 0.0
 }
 </json>
 
@@ -63,6 +66,7 @@ Answer:
 "HIGH_PASS":,
 "LOW_PASS":,
 "REVERB":,
-"DISTORTION":
+"DISTORTION":,
+"CHORUS":
 }
 </json>
