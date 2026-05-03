@@ -68,8 +68,5 @@ private:
     LoadingComponent loadingOverlay;
     bool isLoading = false;
 
-    inline void parameterAdded();
-    inline void parameterRemoved();
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessorEditor)
 };

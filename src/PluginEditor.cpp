@@ -117,7 +117,11 @@ void CaveyAudioProcessorEditor::whenRemoveParameterButtonClicked(Parameter * par
     removeButton.removeListener(this);
     delete parameterGroup;
     audioProcessor.clearGeneratedParameter();
-    parameterRemoved();
+    renderParameterKnobs();
+    if (parameterKnobs.empty()) {
+        mainLabel.setVisible(true);
+    }
+    updateGenerateButtonEnabledState();
 }
 
 void CaveyAudioProcessorEditor::addParameterControl(const juce::String& parameterName) {
@@ -128,21 +132,9 @@ void CaveyAudioProcessorEditor::addParameterControl(const juce::String& paramete
 
     addAndMakeVisible(parameter);
     parameterKnobs.emplace_back(parameter);
-    parameterAdded();
-}
-
-inline void CaveyAudioProcessorEditor::parameterAdded() {
-    juce::Logger::writeToLog("Parameter added");
+    Logger::writeToLog("Parameter added");
     renderParameterKnobs();
     mainLabel.setVisible(false);
-    updateGenerateButtonEnabledState();
-}
-
-inline void CaveyAudioProcessorEditor::parameterRemoved() {
-    renderParameterKnobs();
-    if (parameterKnobs.empty()) {
-        mainLabel.setVisible(true);
-    }
     updateGenerateButtonEnabledState();
 }
 
