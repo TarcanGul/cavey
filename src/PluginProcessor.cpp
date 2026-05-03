@@ -217,6 +217,10 @@ juce::AudioProcessorValueTreeState& CaveyAudioProcessor::getValueTree() {
     return apvts_;
 }
 
+bool CaveyAudioProcessor::hasGeneratedParameter() const noexcept {
+    return generatedParameter_ != nullptr;
+}
+
 // This creates new instances of the plugin
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {

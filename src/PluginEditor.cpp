@@ -15,9 +15,11 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     mainLabel.setEditable(false);
 
     promptEditor.setTextToShowWhenEmpty(CaveyUI::PROMPT_PLACEHOLDER_TEXT, Colours::grey.withAlpha(.6f));
+    promptEditor.addListener(this);
 
     generateButton.setButtonText(CaveyUI::GENERATE_BUTTON_TEXT);
     generateButton.addListener(this);
+    updateGenerateButtonEnabledState();
 
     addAndMakeVisible(&mainLabel);
     addAndMakeVisible(&promptEditor);
@@ -32,6 +34,7 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
 
 CaveyAudioProcessorEditor::~CaveyAudioProcessorEditor() {
     generateButton.removeListener(this);
+    promptEditor.removeListener(this);
     for (auto parameter : parameterKnobs) {
         delete parameter;
     }
@@ -81,6 +84,7 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
     }
 
     setLoading(true);
+    updateGenerateButtonEnabledState();
 
     const juce::String prompt = promptEditor.getText();
 
@@ -92,6 +96,14 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
 
 void CaveyAudioProcessorEditor::sliderValueChanged(juce::Slider *slider) {
     audioProcessor.setBackendParameterValue(slider->getName(), static_cast<float>(slider->getValue()));
+}
+
+void CaveyAudioProcessorEditor::textEditorTextChanged(TextEditor& editor) {
+    if (&editor != &promptEditor) {
+        return;
+    }
+
+    updateGenerateButtonEnabledState();
 }
 
 void CaveyAudioProcessorEditor::whenRemoveParameterButtonClicked(Parameter * parameterGroup) {
@@ -113,6 +125,7 @@ inline void CaveyAudioProcessorEditor::parameterAdded() {
     juce::Logger::writeToLog("Parameter added");
     renderParameterKnobs();
     mainLabel.setVisible(false);
+    updateGenerateButtonEnabledState();
 }
 
 inline void CaveyAudioProcessorEditor::parameterRemoved() {
@@ -120,6 +133,7 @@ inline void CaveyAudioProcessorEditor::parameterRemoved() {
     if (parameterKnobs.empty()) {
         mainLabel.setVisible(true);
     }
+    updateGenerateButtonEnabledState();
 }
 
 void CaveyAudioProcessorEditor::renderParameterKnobs() const noexcept {
@@ -152,8 +166,6 @@ void CaveyAudioProcessorEditor::actionListenerCallback(const juce::String &messa
         parameterKnobs.emplace_back(parameter);
         parameterAdded();
     });
-
-    generateButton.setEnabled(true);
 }
 
 std::optional<Parameter *> CaveyAudioProcessorEditor::getParameterGroup(Button* buttonRef) {
@@ -175,4 +187,9 @@ void CaveyAudioProcessorEditor::setLoading(bool desiredLoadingState) {
     repaint();
 }
 
+void CaveyAudioProcessorEditor::updateGenerateButtonEnabledState() {
+    const juce::String promptText = promptEditor.getText();
+    const bool hasPrompt = promptText.trim().isNotEmpty();
+    generateButton.setEnabled(hasPrompt && !isLoading && !audioProcessor.hasGeneratedParameter());
+}
 

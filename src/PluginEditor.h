@@ -30,6 +30,7 @@ class CaveyAudioProcessor;
 class CaveyAudioProcessorEditor : public juce::AudioProcessorEditor,
         public juce::Button::Listener,
         public juce::ActionListener,
+        private juce::TextEditor::Listener,
         private juce::Slider::Listener
 {
 public:
@@ -46,10 +47,12 @@ private:
     void renderParameterKnobs() const noexcept;
 
     void sliderValueChanged(juce::Slider * slider) override;
+    void textEditorTextChanged(TextEditor& editor) override;
 
     void actionListenerCallback(const juce::String& message) override;
 
     void setLoading(bool desiredLoadingState);
+    void updateGenerateButtonEnabledState();
 
     std::optional<Parameter *> getParameterGroup(Button * buttonRef);
     CaveyAudioProcessor& audioProcessor;
@@ -67,4 +70,3 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessorEditor)
 };
-
