@@ -142,7 +142,9 @@ void CaveyAudioProcessorEditor::renderParameterKnobs() const noexcept {
     auto screen = getLocalBounds();
     for (size_t i = 0; i < parameterKnobs.size(); ++i) {
         auto parameter = parameterKnobs[i];
-        parameter->setBounds(screen.removeFromTop(CaveyUI::KNOB_INIT_Y_POS + CaveyUI::KNOB_HEIGHT * i));
+        auto parameterBounds = screen.removeFromTop(CaveyUI::KNOB_INIT_Y_POS + CaveyUI::KNOB_HEIGHT * i);
+        parameterBounds.removeFromLeft(CaveyUI::MARGIN_SMALL);
+        parameter->setBounds(parameterBounds);
     }
 }
 

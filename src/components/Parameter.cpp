@@ -37,9 +37,11 @@ void Parameter::resized() {
     auto componentBounds = getLocalBounds();
     label_->setBounds(componentBounds.removeFromLeft(LABEL_WIDTH));
     slider_->setBounds(componentBounds);
-    removeButton_->setBounds(componentBounds
-                                     .removeFromRight(REMOVE_BUTTON_WIDTH)
-                                     .reduced(REMOVE_BUTTON_HORIZONTAL_PADDING, 0));
+    auto removeButtonBounds = componentBounds
+                                      .removeFromRight(REMOVE_BUTTON_WIDTH)
+                                      .reduced(REMOVE_BUTTON_HORIZONTAL_PADDING, 0);
+    removeButtonBounds.removeFromTop(REMOVE_BUTTON_TOP_PADDING);
+    removeButton_->setBounds(removeButtonBounds);
 }
 
 void Parameter::setLabel(const juce::String& label) {
