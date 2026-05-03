@@ -24,6 +24,7 @@ public:
     void setRemoveButtonListener(Button::Listener *listener);
 private:
     static constexpr int REMOVE_BUTTON_WIDTH = 100;
+    static constexpr int REMOVE_BUTTON_HORIZONTAL_PADDING = 10;
     static constexpr int LABEL_WIDTH = 100;
 
     std::unique_ptr<Label> label_;
