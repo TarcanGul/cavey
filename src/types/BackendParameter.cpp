@@ -44,7 +44,7 @@ std::optional<float> BackendParameter::getBaseEffectValue(Cavey::BaseEffect effe
     return firstValue - ((firstValue - secondValue) * parameterValue);
 }
 
-juce::String BackendParameter::getName() {
+juce::String BackendParameter::getName() const {
     return this->name;
 }
 

@@ -221,6 +221,18 @@ bool CaveyAudioProcessor::hasGeneratedParameter() const noexcept {
     return generatedParameter_ != nullptr;
 }
 
+juce::String CaveyAudioProcessor::getGeneratedParameterName() const {
+    if (generatedParameter_ == nullptr) {
+        return {};
+    }
+
+    return generatedParameter_->getName();
+}
+
+void CaveyAudioProcessor::clearGeneratedParameter() noexcept {
+    generatedParameter_.reset();
+}
+
 // This creates new instances of the plugin
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {

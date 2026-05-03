@@ -15,7 +15,7 @@ class BackendParameter {
 public:
     explicit BackendParameter(const juce::AudioParameterFloat& parameterValue);
     ~BackendParameter() = default;
-    juce::String getName();
+    juce::String getName() const;
 
     void setName(const juce::String& name);
     void setCharacteristicCoefficients(const Cavey::CoefficientGroupInitializer& init);

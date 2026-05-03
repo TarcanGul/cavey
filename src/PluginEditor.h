@@ -13,7 +13,7 @@ namespace CaveyUI {
     static constexpr int PROMPT_WIDTH = 100;
     static constexpr int PROMPT_HEIGHT = 200;
     static constexpr int INIT_SCREEN_WIDTH = 600;
-    static constexpr int INIT_SCREEN_HEIGHT = 600;
+    static constexpr int INIT_SCREEN_HEIGHT = 400;
     static constexpr int MAX_PARAMETER_AMOUNT = 1;
 
     static constexpr size_t KNOB_INIT_Y_POS = 100L;
@@ -33,7 +33,6 @@ class CaveyAudioProcessor;
 class CaveyAudioProcessorEditor : public juce::AudioProcessorEditor,
         public juce::Button::Listener,
         public juce::ActionListener,
-        private juce::TextEditor::Listener,
         private juce::Slider::Listener
 {
 public:
@@ -47,10 +46,10 @@ private:
     void buttonClicked(Button * buttonRef) override;
     void whenGenerateButtonClicked();
     void whenRemoveParameterButtonClicked(Parameter * parameterGroup);
+    void addParameterControl(const juce::String& parameterName);
     void renderParameterKnobs() const noexcept;
 
     void sliderValueChanged(juce::Slider * slider) override;
-    void textEditorTextChanged(TextEditor& editor) override;
 
     void actionListenerCallback(const juce::String& message) override;
 

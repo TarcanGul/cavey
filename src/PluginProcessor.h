@@ -50,6 +50,8 @@ public:
     void setBackendParameterValue(const juce::String& parameterName, float value);
     juce::AudioProcessorValueTreeState& getValueTree();
     bool hasGeneratedParameter() const noexcept;
+    juce::String getGeneratedParameterName() const;
+    void clearGeneratedParameter() noexcept;
 private:
     // TODO: Maybe a struct instead of `const std::map<Cavey::BaseEffect, float>& coefficients`?
     void addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients);
