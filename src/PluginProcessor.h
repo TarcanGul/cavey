@@ -50,15 +50,14 @@ public:
     void setBackendParameterValue(const juce::String& parameterName, float value);
     juce::AudioProcessorValueTreeState& getValueTree();
 private:
-    juce::AudioProcessorValueTreeState apvts;
-
     // TODO: Maybe a struct instead of `const std::map<Cavey::BaseEffect, float>& coefficients`?
     void addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients);
-    std::unique_ptr<LLMController> llm;
-    // TODO: look here later to see if you can get rid of the pointer
-    std::map<juce::String, std::unique_ptr<BackendParameter>> parameters;
-    float lastCutoffHz { 20000.0f };
-    float lastTargetGain {1.0};
+
+    juce::AudioProcessorValueTreeState apvts_;
+    std::unique_ptr<LLMController> llm_;
+    std::unique_ptr<BackendParameter> generatedParameter_;
+    float lastCutoffHz_ { 20000.0f };
+    float lastTargetGain_ { 1.0 };
 
     enum {
         lowPassFilterIndex,
@@ -77,9 +76,9 @@ private:
         juce::dsp::Gain<float>,
         juce::dsp::WaveShaper<float>,
         juce::dsp::Chorus<float>
-    > processorChain;
+    > processorChain_;
 
-    std::unique_ptr<juce::FileLogger> logger;
+    std::unique_ptr<juce::FileLogger> logger_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CaveyAudioProcessor)
 };

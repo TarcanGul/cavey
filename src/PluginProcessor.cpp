@@ -8,22 +8,22 @@
 CaveyAudioProcessor::CaveyAudioProcessor()
     :
 #ifndef JucePlugin_PreferredChannelConfigurations
-    AudioProcessor(BusesProperties()
+        AudioProcessor(BusesProperties()
         .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
         .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-    apvts(*this, nullptr, juce::Identifier("Cavey"), {})
+        apvts_(*this, nullptr, juce::Identifier("Cavey"), {})
 #endif
 {
-    llm = std::make_unique<OllamaController>();
+    llm_ = std::make_unique<OllamaController>();
 
-    logger.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
-    juce::Logger::setCurrentLogger(logger.get());
+    logger_.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
+    juce::Logger::setCurrentLogger(logger_.get());
     juce::Logger::writeToLog("Audio processor is initiated.");
 }
 
 CaveyAudioProcessor::~CaveyAudioProcessor() {
     juce::Logger::setCurrentLogger(nullptr);
-    logger.reset();
+    logger_.reset();
 };
 
 void CaveyAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
@@ -35,28 +35,28 @@ void CaveyAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) 
             .numChannels = static_cast<unsigned int>(getTotalNumOutputChannels())
     };
 
-    processorChain.prepare(spec);
+    processorChain_.prepare(spec);
 
-    auto& lowPassFilter = processorChain.get<lowPassFilterIndex>();
+    auto& lowPassFilter = processorChain_.get<lowPassFilterIndex>();
     lowPassFilter.setMode(juce::dsp::LadderFilterMode::LPF24);
     lowPassFilter.setCutoffFrequencyHz(20000);
     lowPassFilter.setResonance (0.7f);
 
-    auto& highPassFilter = processorChain.get<highPassFilterIndex>();
+    auto& highPassFilter = processorChain_.get<highPassFilterIndex>();
     highPassFilter.setMode(juce::dsp::LadderFilterMode::HPF24);
     highPassFilter.setCutoffFrequencyHz(20);
     highPassFilter.setResonance (0.7f);
 
-    auto& distortion = processorChain.get<distortionIndex>();
+    auto& distortion = processorChain_.get<distortionIndex>();
     distortion.functionToUse = [](float x) { return std::tanh(x); };
 
-    auto& chorus = processorChain.get<chorusIndex>();
+    auto& chorus = processorChain_.get<chorusIndex>();
     chorus.setCentreDelay(10);
     chorus.setRate(1);
     chorus.setDepth(0.5);
     chorus.setFeedback(0.0);
 
-    processorChain.reset();
+    processorChain_.reset();
 }
 
 void CaveyAudioProcessor::releaseResources() {}
@@ -64,8 +64,8 @@ void CaveyAudioProcessor::releaseResources() {}
 void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients) {
     juce::Logger::writeToLog("Backend parameter" + parameterName.toStdString() + "is being added");
     auto newBackendParameterValue = std::make_unique<juce::AudioParameterFloat>(parameterName, parameterName, 0.0f, 1.0f, 0.0f);
-    apvts.createAndAddParameter(std::move(newBackendParameterValue));
-    const juce::AudioParameterFloat * paramRef = dynamic_cast<juce::AudioParameterFloat *>(apvts.getParameter(parameterName));
+    apvts_.createAndAddParameter(std::move(newBackendParameterValue));
+    const juce::AudioParameterFloat * paramRef = dynamic_cast<juce::AudioParameterFloat *>(apvts_.getParameter(parameterName));
     if (paramRef == nullptr) {
         throw std::runtime_error("paramRef is null");
     }
@@ -81,14 +81,14 @@ void CaveyAudioProcessor::addBackendParameter(const juce::String& parameterName,
         .chorus = coefficients.at(Cavey::BaseEffect::CHORUS)
     });
 
-    parameters.insert({ parameterName, std::move(newBackendParameter) });
+    generatedParameter_ = std::move(newBackendParameter);
 }
 
 void CaveyAudioProcessor::setBackendParameterValue(const juce::String& parameterName, float value) {
-    auto parameter = apvts.getParameter(parameterName);
+    auto parameter = apvts_.getParameter(parameterName);
     if (parameter == nullptr) {
-        juce::Logger::writeToLog(parameterName + " cannot be found in the parameters map!");
-        throw std::invalid_argument(parameterName.toStdString() + " cannot be found in the parameters map!");
+        juce::Logger::writeToLog(parameterName + " cannot be found in the generatedParameter_ map!");
+        throw std::invalid_argument(parameterName.toStdString() + " cannot be found in the generatedParameter_ map!");
     }
     parameter->setValue(value);
 }
@@ -117,61 +117,62 @@ bool CaveyAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) con
 
 void CaveyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
-    float targetLowPassCutoffHz = lastCutoffHz;
+    if (!generatedParameter_) {
+        return;
+    }
+    BackendParameter* parameter = generatedParameter_.get();
+    float targetLowPassCutoffHz = lastCutoffHz_;
     float targetHighPassCutoffHz = 20.0f;
-    float targetGain = lastTargetGain;
+    float targetGain = lastTargetGain_;
     float targetReverbWetLevel {0.0f};
     float targetDistortionLevel {0.0f};
     float targetChorus {0.0f};
-    for (const auto& parameterValue : parameters) {
-        // TODO: look here
-        BackendParameter* parameter = parameterValue.second.get();
-        if (auto lowPassValue = parameter->getBaseEffectValue(Cavey::BaseEffect::LOW_PASS)) {
-            targetLowPassCutoffHz = *lowPassValue;
-        }
-        if (auto highPassValue = parameter->getBaseEffectValue(Cavey::BaseEffect::HIGH_PASS)) {
-            targetHighPassCutoffHz = *highPassValue;
-        }
-        if (auto gainValue = parameter->getBaseEffectValue(Cavey::BaseEffect::VOLUME)) {
-            targetGain = *gainValue;
-        }
-        if (auto reverbValue = parameter->getBaseEffectValue(Cavey::BaseEffect::REVERB)) {
-            targetReverbWetLevel = *reverbValue;
-        }
-        if (auto distortionValue = parameter->getBaseEffectValue(Cavey::BaseEffect::DISTORTION)) {
-            targetDistortionLevel = *distortionValue;
-        }
-        if (auto chorusValue = parameter->getBaseEffectValue(Cavey::BaseEffect::CHORUS)) {
-            targetChorus = *chorusValue;
-        }
+
+    if (auto lowPassValue = parameter->getBaseEffectValue(Cavey::BaseEffect::LOW_PASS)) {
+        targetLowPassCutoffHz = *lowPassValue;
+    }
+    if (auto highPassValue = parameter->getBaseEffectValue(Cavey::BaseEffect::HIGH_PASS)) {
+        targetHighPassCutoffHz = *highPassValue;
+    }
+    if (auto gainValue = parameter->getBaseEffectValue(Cavey::BaseEffect::VOLUME)) {
+        targetGain = *gainValue;
+    }
+    if (auto reverbValue = parameter->getBaseEffectValue(Cavey::BaseEffect::REVERB)) {
+        targetReverbWetLevel = *reverbValue;
+    }
+    if (auto distortionValue = parameter->getBaseEffectValue(Cavey::BaseEffect::DISTORTION)) {
+        targetDistortionLevel = *distortionValue;
+    }
+    if (auto chorusValue = parameter->getBaseEffectValue(Cavey::BaseEffect::CHORUS)) {
+        targetChorus = *chorusValue;
     }
 
-    // Apply parameter updates before processing
-    lastCutoffHz = targetLowPassCutoffHz;
-    lastTargetGain = targetGain;
-    auto& lowPassFilter = processorChain.get<lowPassFilterIndex>();
+    lastCutoffHz_ = targetLowPassCutoffHz;
+    lastTargetGain_ = targetGain;
+
+    auto& lowPassFilter = processorChain_.get<lowPassFilterIndex>();
     lowPassFilter.setCutoffFrequencyHz(targetLowPassCutoffHz);
 
-    auto& highPassFilter = processorChain.get<highPassFilterIndex>();
+    auto& highPassFilter = processorChain_.get<highPassFilterIndex>();
     highPassFilter.setCutoffFrequencyHz(targetHighPassCutoffHz);
 
-    auto& gain = processorChain.get<gainIndex>();
+    auto& gain = processorChain_.get<gainIndex>();
     gain.setGainLinear(targetGain);
 
-    auto& reverb = processorChain.get<reverbIndex>();
+    auto& reverb = processorChain_.get<reverbIndex>();
     reverb.setParameters({
         .wetLevel = targetReverbWetLevel
     });
 
-    auto& drive = processorChain.get<driveIndex>();
+    auto& drive = processorChain_.get<driveIndex>();
     drive.setGainLinear(juce::Decibels::decibelsToGain(targetDistortionLevel * 24.0f));
 
-    auto& chorus = processorChain.get<chorusIndex>();
+    auto& chorus = processorChain_.get<chorusIndex>();
     chorus.setMix(targetChorus);
 
     juce::dsp::AudioBlock<float> audioBlock(buffer);
     juce::dsp::ProcessContextReplacing<float> context(audioBlock);
-    processorChain.process(context);
+    processorChain_.process(context);
 }
 
 juce::AudioProcessorEditor* CaveyAudioProcessor::createEditor()
@@ -193,7 +194,7 @@ void CaveyAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 
 void CaveyAudioProcessor::addCaveyParameter(const juce::String& prompt) {
     // Do this part async
-    const juce::String response = this->llm->prompt(prompt);
+    const juce::String response = this->llm_->prompt(prompt);
 
     boost::system::error_code errorCode;
     const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
@@ -213,7 +214,7 @@ void CaveyAudioProcessor::addCaveyParameter(const juce::String& prompt) {
 }
 
 juce::AudioProcessorValueTreeState& CaveyAudioProcessor::getValueTree() {
-    return apvts;
+    return apvts_;
 }
 
 // This creates new instances of the plugin

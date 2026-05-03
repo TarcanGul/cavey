@@ -14,7 +14,7 @@ namespace CaveyUI {
     static constexpr int PROMPT_HEIGHT = 200;
     static constexpr int INIT_SCREEN_WIDTH = 600;
     static constexpr int INIT_SCREEN_HEIGHT = 600;
-    static constexpr int MAX_PARAMETER_AMOUNT = 3;
+    static constexpr int MAX_PARAMETER_AMOUNT = 1;
 
     static constexpr size_t KNOB_INIT_Y_POS = 100L;
     static constexpr size_t KNOB_HEIGHT = 10;
@@ -56,6 +56,8 @@ private:
     Label mainLabel;
     TextEditor promptEditor;
     TextButton generateButton;
+
+    // Keeping as a list for future extensibility
     std::vector<Parameter *> parameterKnobs = {};
     LoadingComponent loadingOverlay;
     bool isLoading = false;
