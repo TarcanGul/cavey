@@ -23,6 +23,9 @@ namespace CaveyUI {
     static constexpr const char * MAIN_LABEL_TEXT = "Welcome to Cavey! Start with a prompt to generate a parameter.";
     static constexpr const char * PROMPT_PLACEHOLDER_TEXT = "Write your prompt here.";
     static constexpr const char * GENERATE_BUTTON_TEXT = "Generate";
+    static constexpr const char * GENERATE_TOOLTIP_PARAMETER_EXISTS = "Only one parameter can be created.";
+    static constexpr const char * GENERATE_TOOLTIP_EMPTY_PROMPT = "Enter a prompt to generate.";
+    static constexpr const char * GENERATE_TOOLTIP_LOADING = "Generating parameter...";
 }
 
 class CaveyAudioProcessor;
@@ -59,6 +62,7 @@ private:
     Label mainLabel;
     TextEditor promptEditor;
     TextButton generateButton;
+    TooltipWindow tooltipWindow;
 
     // Keeping as a list for future extensibility
     std::vector<Parameter *> parameterKnobs = {};

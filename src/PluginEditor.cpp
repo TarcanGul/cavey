@@ -190,6 +190,18 @@ void CaveyAudioProcessorEditor::setLoading(bool desiredLoadingState) {
 void CaveyAudioProcessorEditor::updateGenerateButtonEnabledState() {
     const juce::String promptText = promptEditor.getText();
     const bool hasPrompt = promptText.trim().isNotEmpty();
-    generateButton.setEnabled(hasPrompt && !isLoading && !audioProcessor.hasGeneratedParameter());
-}
+    const bool hasGeneratedParameter = audioProcessor.hasGeneratedParameter();
+    const bool shouldEnableGenerateButton = hasPrompt && !isLoading && !hasGeneratedParameter;
 
+    generateButton.setEnabled(shouldEnableGenerateButton);
+
+    if (shouldEnableGenerateButton) {
+        generateButton.setTooltip({});
+    } else if (hasGeneratedParameter) {
+        generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_PARAMETER_EXISTS);
+    } else if (!hasPrompt) {
+        generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_EMPTY_PROMPT);
+    } else {
+        generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_LOADING);
+    }
+}
