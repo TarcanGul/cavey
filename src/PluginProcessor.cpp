@@ -6,6 +6,11 @@
 #include "controllers/OllamaController.h"
 
 CaveyAudioProcessor::CaveyAudioProcessor()
+    : CaveyAudioProcessor(std::make_unique<OllamaController>())
+{
+}
+
+CaveyAudioProcessor::CaveyAudioProcessor(std::unique_ptr<LLMController> llmController)
     :
 #ifndef JucePlugin_PreferredChannelConfigurations
         AudioProcessor(BusesProperties()
@@ -14,7 +19,7 @@ CaveyAudioProcessor::CaveyAudioProcessor()
         apvts_(*this, nullptr, juce::Identifier("Cavey"), {})
 #endif
 {
-    llm_ = std::make_unique<OllamaController>();
+    llm_ = std::move(llmController);
 
     logger_.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
     juce::Logger::setCurrentLogger(logger_.get());

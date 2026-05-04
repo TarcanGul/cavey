@@ -10,6 +10,7 @@
 class CaveyAudioProcessor : public juce::AudioProcessor, public juce::ActionBroadcaster {
 public:
     CaveyAudioProcessor();
+    explicit CaveyAudioProcessor(std::unique_ptr<LLMController> llmController);
     ~CaveyAudioProcessor() override;
 
     // AudioProcessor overrides
