@@ -3,11 +3,22 @@
 #include <utility>
 #include "PluginEditor.h"
 #include <cmath>
+#include "controllers/AnthropicController.h"
 #include "controllers/OllamaController.h"
+#include "controllers/OpenAIController.h"
 
 CaveyAudioProcessor::CaveyAudioProcessor()
-    : CaveyAudioProcessor(std::make_unique<OllamaController>())
+    :
+#ifndef JucePlugin_PreferredChannelConfigurations
+        AudioProcessor(BusesProperties()
+        .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+        apvts_(*this, nullptr, juce::Identifier("Cavey"), {})
+#endif
 {
+    logger_.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
+    juce::Logger::setCurrentLogger(logger_.get());
+    juce::Logger::writeToLog("Audio processor is initiated.");
 }
 
 CaveyAudioProcessor::CaveyAudioProcessor(std::unique_ptr<LLMController> llmController)
@@ -20,6 +31,8 @@ CaveyAudioProcessor::CaveyAudioProcessor(std::unique_ptr<LLMController> llmContr
 #endif
 {
     llm_ = std::move(llmController);
+    activeProvider_ = Cavey::AiProvider::kCustom;
+    isProviderConnected_ = llm_ != nullptr;
 
     logger_.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
     juce::Logger::setCurrentLogger(logger_.get());
@@ -198,11 +211,19 @@ void CaveyAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 }
 
 void CaveyAudioProcessor::addCaveyParameter(const juce::String& prompt) {
+    if (!isProviderConnected_ || llm_ == nullptr) {
+        throw std::runtime_error("Set up your AI provider before generating.");
+    }
+
     // Do this part async
     const juce::String response = this->llm_->prompt(prompt);
 
     boost::system::error_code errorCode;
     const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
+    if (errorCode || !readResponse.is_object()) {
+        throw std::runtime_error("AI response did not include usable parameter JSON.");
+    }
+
     const boost::json::object parsedResponse = readResponse.as_object();
     juce::String parameterName = juce::String(parsedResponse.at("NAME").get_string().c_str());
 
@@ -236,6 +257,72 @@ juce::String CaveyAudioProcessor::getGeneratedParameterName() const {
 
 void CaveyAudioProcessor::clearGeneratedParameter() noexcept {
     generatedParameter_.reset();
+}
+
+Cavey::ProviderConnectionResult CaveyAudioProcessor::connectAiProvider(
+        Cavey::AiProvider provider,
+        const Cavey::ProviderConnectionConfig& config) {
+    auto controller = makeProviderController(provider);
+    if (controller == nullptr) {
+        return {
+            .connected = false,
+            .message = "Unknown AI provider."
+        };
+    }
+
+    auto result = controller->connect(config);
+    if (!result.connected) {
+        return result;
+    }
+
+    llm_ = std::move(controller);
+    activeProvider_ = provider;
+    isProviderConnected_ = true;
+    sendActionMessage("AI_PROVIDER_CONNECTED");
+    return result;
+}
+
+juce::StringArray CaveyAudioProcessor::fetchOllamaModels() {
+    auto controller = makeProviderController(Cavey::AiProvider::kOllama);
+    if (controller == nullptr) {
+        return {};
+    }
+
+    return controller->fetchModels();
+}
+
+bool CaveyAudioProcessor::isAiProviderConnected() const noexcept {
+    return isProviderConnected_;
+}
+
+Cavey::AiProvider CaveyAudioProcessor::getActiveProvider() const noexcept {
+    return activeProvider_;
+}
+
+juce::String CaveyAudioProcessor::getActiveProviderName() const {
+    return Cavey::ToProviderDisplayName(activeProvider_);
+}
+
+bool CaveyAudioProcessor::hasStoredCredential(Cavey::AiProvider provider) const {
+    auto controller = makeProviderController(provider);
+    return controller != nullptr && controller->hasStoredCredential();
+}
+
+std::unique_ptr<LLMController> CaveyAudioProcessor::makeProviderController(
+        Cavey::AiProvider provider) const {
+    switch (provider) {
+        case Cavey::AiProvider::kOpenAI:
+            return std::make_unique<Cavey::OpenAIController>();
+        case Cavey::AiProvider::kAnthropic:
+            return std::make_unique<Cavey::AnthropicController>();
+        case Cavey::AiProvider::kOllama:
+            return std::make_unique<Cavey::OllamaController>();
+        case Cavey::AiProvider::kCustom:
+        case Cavey::AiProvider::kNone:
+            break;
+    }
+
+    return nullptr;
 }
 
 // This creates new instances of the plugin

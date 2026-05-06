@@ -52,6 +52,13 @@ target_sources(CaveyPlugin PRIVATE
     src/types/BackendParameter.cpp
     src/components/Parameter.cpp
     src/components/LoadingComponent.cpp
+    src/components/AiSetupComponent.cpp
+    src/controllers/LLMController.cpp
+    src/controllers/HttpTransport.cpp
+    src/controllers/CredentialStore.cpp
+    src/controllers/ProviderResponseParser.cpp
+    src/controllers/OpenAIController.cpp
+    src/controllers/AnthropicController.cpp
     src/controllers/OllamaController.cpp
     src/effects/CaveyEffects.cpp
 
@@ -88,6 +95,10 @@ target_link_libraries(CaveyPlugin
         juce::juce_core
 )
 
+if(APPLE)
+    target_link_libraries(CaveyPlugin PRIVATE "-framework Security")
+endif()
+
 FetchContent_Declare(
     Catch2
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -100,12 +111,20 @@ enable_testing()
 add_executable(CaveyTests
     test/effects/CaveyEffectsTests.cpp
     test/types/BackendParameterTests.cpp
+    test/controllers/ProviderControllerTests.cpp
     test/PluginProcessorTests.cpp
     src/PluginProcessor.cpp
     src/PluginEditor.cpp
     src/types/BackendParameter.cpp
     src/components/Parameter.cpp
     src/components/LoadingComponent.cpp
+    src/components/AiSetupComponent.cpp
+    src/controllers/LLMController.cpp
+    src/controllers/HttpTransport.cpp
+    src/controllers/CredentialStore.cpp
+    src/controllers/ProviderResponseParser.cpp
+    src/controllers/OpenAIController.cpp
+    src/controllers/AnthropicController.cpp
     src/controllers/OllamaController.cpp
     src/effects/CaveyEffects.cpp
 )
@@ -141,6 +160,10 @@ target_link_libraries(CaveyTests
         juce::juce_data_structures
         juce::juce_core
 )
+
+if(APPLE)
+    target_link_libraries(CaveyTests PRIVATE "-framework Security")
+endif()
 
 if(CAVEY_ENABLE_COVERAGE)
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(AppleClang|Clang)$")

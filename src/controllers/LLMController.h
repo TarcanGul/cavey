@@ -6,10 +6,46 @@
 
 #include <JuceHeader.h>
 
-/**
- * Interface for LLM communication
- */
-struct LLMController {
-    virtual String prompt(String const& prompt) = 0;
+namespace Cavey {
+
+enum class AiProvider {
+    kNone,
+    kOpenAI,
+    kAnthropic,
+    kOllama,
+    kCustom
+};
+
+struct ProviderMetadata {
+    AiProvider provider = AiProvider::kNone;
+    juce::String id;
+    juce::String display_name;
+    juce::String model;
+    bool requires_api_key = false;
+};
+
+struct ProviderConnectionConfig {
+    juce::String api_key;
+    juce::String ollama_model;
+};
+
+struct ProviderConnectionResult {
+    bool connected = false;
+    juce::String message;
+};
+
+juce::String ToProviderId(AiProvider provider);
+juce::String ToProviderDisplayName(AiProvider provider);
+
+}  // namespace Cavey
+
+class LLMController {
+public:
+    virtual juce::String prompt(const juce::String& prompt) = 0;
+    virtual Cavey::ProviderConnectionResult connect(
+            const Cavey::ProviderConnectionConfig& config) = 0;
+    virtual Cavey::ProviderMetadata metadata() const = 0;
+    virtual bool hasStoredCredential() const { return false; }
+    virtual juce::StringArray fetchModels() { return {}; }
     virtual ~LLMController() = default;
 };

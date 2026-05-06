@@ -53,12 +53,24 @@ public:
     bool hasGeneratedParameter() const noexcept;
     juce::String getGeneratedParameterName() const;
     void clearGeneratedParameter() noexcept;
+
+    Cavey::ProviderConnectionResult connectAiProvider(
+            Cavey::AiProvider provider,
+            const Cavey::ProviderConnectionConfig& config);
+    juce::StringArray fetchOllamaModels();
+    bool isAiProviderConnected() const noexcept;
+    Cavey::AiProvider getActiveProvider() const noexcept;
+    juce::String getActiveProviderName() const;
+    bool hasStoredCredential(Cavey::AiProvider provider) const;
 private:
     // TODO: Maybe a struct instead of `const std::map<Cavey::BaseEffect, float>& coefficients`?
     void addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients);
+    std::unique_ptr<LLMController> makeProviderController(Cavey::AiProvider provider) const;
 
     juce::AudioProcessorValueTreeState apvts_;
     std::unique_ptr<LLMController> llm_;
+    Cavey::AiProvider activeProvider_ = Cavey::AiProvider::kNone;
+    bool isProviderConnected_ = false;
     std::unique_ptr<BackendParameter> generatedParameter_;
     float lastCutoffHz_ { 20000.0f };
     float lastTargetGain_ { 1.0 };

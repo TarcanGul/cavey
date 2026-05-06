@@ -21,11 +21,23 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
 
     generateButton.setButtonText(CaveyUI::GENERATE_BUTTON_TEXT);
     generateButton.addListener(this);
+
+    setupButton.setButtonText(CaveyUI::SETUP_BUTTON_TEXT);
+    setupButton.addListener(this);
+
+    errorToast.setJustificationType(juce::Justification::centred);
+    errorToast.setColour(juce::Label::backgroundColourId,
+                         juce::Colours::darkred.withAlpha(0.9f));
+    errorToast.setColour(juce::Label::textColourId, juce::Colours::white);
+    errorToast.setVisible(false);
+
     updateGenerateButtonEnabledState();
 
     addAndMakeVisible(&mainLabel);
     addAndMakeVisible(&promptEditor);
     addAndMakeVisible(&generateButton);
+    addAndMakeVisible(&setupButton);
+    addChildComponent(&errorToast);
     addChildComponent(&loadingOverlay);
     loadingOverlay.setVisible(false);
 
@@ -40,6 +52,7 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
 
 CaveyAudioProcessorEditor::~CaveyAudioProcessorEditor() {
     generateButton.removeListener(this);
+    setupButton.removeListener(this);
     promptEditor.onTextChange = nullptr;
     for (auto parameter : parameterKnobs) {
         delete parameter;
@@ -66,7 +79,12 @@ void CaveyAudioProcessorEditor::resized() {
 
     // Divide the screen to four areas (header - main area - text area - footer)
     promptEditor.setBounds(promptBounds.reduced(CaveyUI::MARGIN_SMALL));
-    generateButton.setBounds(buttonBounds.reduced(CaveyUI::MARGIN_EXTRA_SMALL, CaveyUI::MARGIN_SMALL));
+    auto reducedButtonBounds = buttonBounds.reduced(CaveyUI::MARGIN_EXTRA_SMALL,
+                                                    CaveyUI::MARGIN_SMALL);
+    generateButton.setBounds(reducedButtonBounds.removeFromTop(
+            reducedButtonBounds.getHeight() / 2).reduced(0, 2));
+    setupButton.setBounds(reducedButtonBounds.reduced(0, 2));
+    errorToast.setBounds(getLocalBounds().withSizeKeepingCentre(360, 34));
     loadingOverlay.setBounds(screen);
 }
 
@@ -74,6 +92,10 @@ void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
     juce::Logger::writeToLog("Button is clicked");
     if (buttonRef == &generateButton) {
         whenGenerateButtonClicked();
+        return;
+    }
+    if (buttonRef == &setupButton) {
+        whenSetupButtonClicked();
         return;
     }
 
@@ -93,11 +115,53 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
     updateGenerateButtonEnabledState();
 
     const juce::String prompt = promptEditor.getText();
+    const juce::Component::SafePointer<CaveyAudioProcessorEditor> safeThis(this);
 
-    std::thread([this, p = prompt] {
-        audioProcessor.addCaveyParameter(p);
-        juce::Logger::writeToLog("Prompt sent as action message");
+    std::thread([safeThis, p = prompt] {
+        try {
+            if (safeThis == nullptr) {
+                return;
+            }
+
+            safeThis->audioProcessor.addCaveyParameter(p);
+            juce::Logger::writeToLog("Prompt sent as action message");
+        } catch (const std::exception& exception) {
+            juce::MessageManager::callAsync([safeThis,
+                                             message = juce::String(exception.what())] {
+                if (safeThis == nullptr) {
+                    return;
+                }
+
+                safeThis->setLoading(false);
+                safeThis->showErrorToast(message);
+                safeThis->updateGenerateButtonEnabledState();
+            });
+        }
     }).detach();
+}
+
+void CaveyAudioProcessorEditor::whenSetupButtonClicked() {
+    const juce::Component::SafePointer<CaveyAudioProcessorEditor> safeThis(this);
+    juce::DialogWindow::LaunchOptions options;
+    options.dialogTitle = "Set up your AI";
+    options.dialogBackgroundColour = getLookAndFeel().findColour(
+            juce::ResizableWindow::backgroundColourId);
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+    options.content.setOwned(new AiSetupComponent(
+            audioProcessor,
+            [safeThis](bool connected, const juce::String& message) {
+                if (safeThis == nullptr) {
+                    return;
+                }
+
+                if (!connected) {
+                    safeThis->showErrorToast(message);
+                }
+                safeThis->updateGenerateButtonEnabledState();
+            }));
+    options.launchAsync();
 }
 
 void CaveyAudioProcessorEditor::sliderValueChanged(juce::Slider *slider) {
@@ -154,6 +218,13 @@ void CaveyAudioProcessorEditor::actionListenerCallback(const juce::String &messa
         return;
     }
 
+    if (message == "AI_PROVIDER_CONNECTED") {
+        juce::MessageManager::callAsync([this] {
+            updateGenerateButtonEnabledState();
+        });
+        return;
+    }
+
     // Right now it is hardcoded, only processor will send parameter name, can be changed later
     const juce::String parameterName {message};
 
@@ -188,7 +259,9 @@ void CaveyAudioProcessorEditor::updateGenerateButtonEnabledState() {
     const juce::String promptText = promptEditor.getText();
     const bool hasPrompt = promptText.trim().isNotEmpty();
     const bool hasGeneratedParameter = audioProcessor.hasGeneratedParameter();
-    const bool shouldEnableGenerateButton = hasPrompt && !isLoading && !hasGeneratedParameter;
+    const bool hasProvider = audioProcessor.isAiProviderConnected();
+    const bool shouldEnableGenerateButton = hasPrompt && hasProvider
+            && !isLoading && !hasGeneratedParameter;
 
     generateButton.setEnabled(shouldEnableGenerateButton);
 
@@ -196,9 +269,26 @@ void CaveyAudioProcessorEditor::updateGenerateButtonEnabledState() {
         generateButton.setTooltip({});
     } else if (hasGeneratedParameter) {
         generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_PARAMETER_EXISTS);
+    } else if (!hasProvider) {
+        generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_SETUP_REQUIRED);
     } else if (!hasPrompt) {
         generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_EMPTY_PROMPT);
     } else {
         generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_LOADING);
     }
+}
+
+void CaveyAudioProcessorEditor::showErrorToast(const juce::String& message) {
+    if (message.isEmpty()) {
+        return;
+    }
+
+    errorToast.setText(message, juce::dontSendNotification);
+    errorToast.setVisible(true);
+    errorToast.toFront(false);
+    juce::Timer::callAfterDelay(4500, [safe_this = juce::Component::SafePointer(this)] {
+        if (safe_this != nullptr) {
+            safe_this->errorToast.setVisible(false);
+        }
+    });
 }

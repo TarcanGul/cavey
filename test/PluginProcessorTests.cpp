@@ -12,9 +12,28 @@ class MockLLMController final : public LLMController {
 public:
     explicit MockLLMController(juce::String response) : response_(std::move(response)) {}
 
-    String prompt(String const& prompt) override {
+    juce::String prompt(const juce::String& prompt) override {
         juce::ignoreUnused(prompt);
         return response_;
+    }
+
+    Cavey::ProviderConnectionResult connect(
+            const Cavey::ProviderConnectionConfig& config) override {
+        juce::ignoreUnused(config);
+        return {
+            .connected = true,
+            .message = "Connected."
+        };
+    }
+
+    Cavey::ProviderMetadata metadata() const override {
+        return {
+            .provider = Cavey::AiProvider::kCustom,
+            .id = "mock",
+            .display_name = "Mock",
+            .model = "mock",
+            .requires_api_key = false
+        };
     }
 
 private:
@@ -64,6 +83,19 @@ bool HasFiniteSamples(const juce::AudioBuffer<float>& buffer) {
 }
 
 }  // namespace
+
+TEST_CASE("Generate is rejected before AI setup", "[processor]") {
+    CaveyAudioProcessor processor;
+
+    REQUIRE_FALSE(processor.isAiProviderConnected());
+    try {
+        processor.addCaveyParameter("make it warm");
+        FAIL("Expected generation before setup to throw.");
+    } catch (const std::exception& exception) {
+        REQUIRE(juce::String(exception.what())
+                == "Set up your AI provider before generating.");
+    }
+}
 
 TEST_CASE("Generated parameters are created from LLM responses", "[processor]") {
     CaveyAudioProcessor processor(MakeMockController());

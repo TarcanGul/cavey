@@ -6,6 +6,7 @@
 #include <utility>
 #include "components/Parameter.h"
 #include "components/LoadingComponent.h"
+#include "components/AiSetupComponent.h"
 
 namespace CaveyUI {
     static constexpr int MARGIN_EXTRA_SMALL = 10;
@@ -23,9 +24,11 @@ namespace CaveyUI {
     static constexpr const char * MAIN_LABEL_TEXT = "Welcome to Cavey! Start with a prompt to generate a parameter.";
     static constexpr const char * PROMPT_PLACEHOLDER_TEXT = "Write your prompt here.";
     static constexpr const char * GENERATE_BUTTON_TEXT = "Generate";
+    static constexpr const char * SETUP_BUTTON_TEXT = "Set up your AI";
     static constexpr const char * GENERATE_TOOLTIP_PARAMETER_EXISTS = "Only one parameter can be created.";
     static constexpr const char * GENERATE_TOOLTIP_EMPTY_PROMPT = "Enter a prompt to generate.";
     static constexpr const char * GENERATE_TOOLTIP_LOADING = "Generating parameter...";
+    static constexpr const char * GENERATE_TOOLTIP_SETUP_REQUIRED = "Set up your AI before generating.";
 }
 
 class CaveyAudioProcessor;
@@ -45,9 +48,11 @@ public:
 private:
     void buttonClicked(Button * buttonRef) override;
     void whenGenerateButtonClicked();
+    void whenSetupButtonClicked();
     void whenRemoveParameterButtonClicked(Parameter * parameterGroup);
     void addParameterControl(const juce::String& parameterName);
     void renderParameterKnobs() const noexcept;
+    void showErrorToast(const juce::String& message);
 
     void sliderValueChanged(juce::Slider * slider) override;
 
@@ -61,7 +66,9 @@ private:
     Label mainLabel;
     TextEditor promptEditor;
     TextButton generateButton;
+    TextButton setupButton;
     TooltipWindow tooltipWindow;
+    Label errorToast;
 
     // Keeping as a list for future extensibility
     std::vector<Parameter *> parameterKnobs = {};
