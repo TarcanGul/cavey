@@ -12,8 +12,7 @@ enum class AiProvider {
     kNone,
     kOpenAI,
     kAnthropic,
-    kOllama,
-    kCustom
+    kOllama
 };
 
 struct ProviderMetadata {
@@ -25,7 +24,6 @@ struct ProviderMetadata {
 };
 
 struct ProviderConnectionConfig {
-    juce::String api_key;
     juce::String ollama_model;
 };
 
@@ -45,7 +43,7 @@ public:
     virtual Cavey::ProviderConnectionResult connect(
             const Cavey::ProviderConnectionConfig& config) = 0;
     virtual Cavey::ProviderMetadata metadata() const = 0;
-    virtual bool hasStoredCredential() const { return false; }
+    virtual bool hasRequiredEnvironmentVariable() const { return false; }
     virtual juce::StringArray fetchModels() { return {}; }
     virtual ~LLMController() = default;
 };

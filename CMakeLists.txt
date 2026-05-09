@@ -55,7 +55,6 @@ target_sources(CaveyPlugin PRIVATE
     src/components/AiSetupComponent.cpp
     src/controllers/LLMController.cpp
     src/controllers/HttpTransport.cpp
-    src/controllers/CredentialStore.cpp
     src/controllers/ProviderResponseParser.cpp
     src/controllers/OpenAIController.cpp
     src/controllers/AnthropicController.cpp
@@ -95,10 +94,6 @@ target_link_libraries(CaveyPlugin
         juce::juce_core
 )
 
-if(APPLE)
-    target_link_libraries(CaveyPlugin PRIVATE "-framework Security")
-endif()
-
 FetchContent_Declare(
     Catch2
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -121,7 +116,6 @@ add_executable(CaveyTests
     src/components/AiSetupComponent.cpp
     src/controllers/LLMController.cpp
     src/controllers/HttpTransport.cpp
-    src/controllers/CredentialStore.cpp
     src/controllers/ProviderResponseParser.cpp
     src/controllers/OpenAIController.cpp
     src/controllers/AnthropicController.cpp
@@ -160,10 +154,6 @@ target_link_libraries(CaveyTests
         juce::juce_data_structures
         juce::juce_core
 )
-
-if(APPLE)
-    target_link_libraries(CaveyTests PRIVATE "-framework Security")
-endif()
 
 if(CAVEY_ENABLE_COVERAGE)
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(AppleClang|Clang)$")

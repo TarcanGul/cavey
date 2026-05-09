@@ -29,12 +29,15 @@ private:
     void refreshPane();
     void refreshOllamaModels();
     void connectSelectedProvider();
+    void saveSelectedProviderKey();
+    void resetSelectedProviderKey();
     void setBusy(bool should_be_busy);
     void setStatus(const juce::String& status, bool is_error);
 
     CaveyAudioProcessor& processor_;
     CompletionCallback completion_callback_;
     Cavey::AiProvider selected_provider_ = Cavey::AiProvider::kOpenAI;
+    juce::String displayed_environment_variable_;
 
     juce::TextButton openai_nav_button_ {"OpenAI"};
     juce::TextButton anthropic_nav_button_ {"Anthropic"};
@@ -43,8 +46,9 @@ private:
     juce::Label title_label_;
     juce::Label detail_label_;
     juce::Label stored_key_label_;
-    juce::TextEditor openai_key_editor_;
-    juce::TextEditor anthropic_key_editor_;
+    juce::TextEditor api_key_editor_;
+    juce::TextButton save_key_button_ {"Save"};
+    juce::TextButton reset_key_button_ {"Reset"};
     juce::ComboBox ollama_model_box_;
     juce::TextButton refresh_models_button_ {"Refresh"};
     juce::TextButton connect_button_ {"Connect"};

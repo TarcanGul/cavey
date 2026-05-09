@@ -22,9 +22,9 @@ std::string GetSystemPrompt() {
 
 AnthropicController::AnthropicController(
         std::shared_ptr<HttpTransport> http_transport,
-        std::shared_ptr<CredentialStore> credential_store)
+        std::shared_ptr<EnvironmentVariableProvider> environment)
     : http_transport_(std::move(http_transport)),
-      credential_store_(std::move(credential_store)) {}
+      environment_(std::move(environment)) {}
 
 juce::String AnthropicController::prompt(const juce::String& prompt) {
     if (prompt.trim().isEmpty()) {
@@ -33,7 +33,8 @@ juce::String AnthropicController::prompt(const juce::String& prompt) {
 
     const auto api_key = loadApiKey();
     if (!api_key.has_value()) {
-        throw std::runtime_error("Connect Anthropic before generating.");
+        throw std::runtime_error(
+                "ANTHROPIC_API_KEY environment variable is not set.");
     }
 
     const auto response = http_transport_->send({
@@ -58,18 +59,19 @@ juce::String AnthropicController::prompt(const juce::String& prompt) {
 
 ProviderConnectionResult AnthropicController::connect(
         const ProviderConnectionConfig& config) {
-    const auto api_key = config.api_key.trim();
-    if (api_key.isEmpty()) {
+    juce::ignoreUnused(config);
+    const auto api_key = loadApiKey();
+    if (!api_key.has_value()) {
         return {
             .connected = false,
-            .message = "Anthropic API key cannot be empty."
+            .message = "ANTHROPIC_API_KEY environment variable is not set."
         };
     }
 
     const auto response = http_transport_->send({
         .method = "POST",
         .url = kMessagesUrl,
-        .headers = makeHeaders(api_key),
+        .headers = makeHeaders(*api_key),
         .body = boost::json::serialize(makeRequestBody("connection test"))
     });
 
@@ -77,18 +79,6 @@ ProviderConnectionResult AnthropicController::connect(
         return {
             .connected = false,
             .message = "Could not connect to Anthropic with that API key."
-        };
-    }
-
-    juce::String error_message;
-    if (!credential_store_->saveSecret(ToProviderId(AiProvider::kAnthropic),
-                                       api_key,
-                                       &error_message)) {
-        return {
-            .connected = false,
-            .message = error_message.isNotEmpty()
-                    ? error_message
-                    : "Could not save Anthropic API key securely."
         };
     }
 
@@ -108,12 +98,23 @@ ProviderMetadata AnthropicController::metadata() const {
     };
 }
 
-bool AnthropicController::hasStoredCredential() const {
-    return credential_store_->hasSecret(ToProviderId(AiProvider::kAnthropic));
+bool AnthropicController::hasRequiredEnvironmentVariable() const {
+    return loadApiKey().has_value();
 }
 
 std::optional<juce::String> AnthropicController::loadApiKey() const {
-    return credential_store_->loadSecret(ToProviderId(AiProvider::kAnthropic));
+    const auto api_key = environment_->getEnvironmentVariable(
+            kApiKeyEnvironmentVariable);
+    if (!api_key.has_value()) {
+        return std::nullopt;
+    }
+
+    const auto trimmed_api_key = api_key->trim();
+    if (trimmed_api_key.isEmpty()) {
+        return std::nullopt;
+    }
+
+    return trimmed_api_key;
 }
 
 juce::String AnthropicController::makeHeaders(const juce::String& api_key) const {

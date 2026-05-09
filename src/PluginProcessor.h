@@ -5,6 +5,7 @@
 #include "types/CaveyTypes.h"
 #include "types/BackendParameter.h"
 #include <stdexcept>
+#include "controllers/EnvironmentVariableProvider.h"
 #include "controllers/LLMController.h"
 
 class CaveyAudioProcessor : public juce::AudioProcessor, public juce::ActionBroadcaster {
@@ -61,7 +62,12 @@ public:
     bool isAiProviderConnected() const noexcept;
     Cavey::AiProvider getActiveProvider() const noexcept;
     juce::String getActiveProviderName() const;
-    bool hasStoredCredential(Cavey::AiProvider provider) const;
+    bool hasRequiredEnvironmentVariable(Cavey::AiProvider provider) const;
+    Cavey::EnvironmentVariableWriteResult saveProviderEnvironmentVariable(
+            Cavey::AiProvider provider,
+            const juce::String& value) const;
+    Cavey::EnvironmentVariableWriteResult resetProviderEnvironmentVariable(
+            Cavey::AiProvider provider) const;
 private:
     // TODO: Maybe a struct instead of `const std::map<Cavey::BaseEffect, float>& coefficients`?
     void addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients);

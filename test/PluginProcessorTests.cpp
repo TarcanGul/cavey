@@ -28,7 +28,7 @@ public:
 
     Cavey::ProviderMetadata metadata() const override {
         return {
-            .provider = Cavey::AiProvider::kCustom,
+            .provider = Cavey::AiProvider::kNone,
             .id = "mock",
             .display_name = "Mock",
             .model = "mock",

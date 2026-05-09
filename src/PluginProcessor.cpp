@@ -31,7 +31,7 @@ CaveyAudioProcessor::CaveyAudioProcessor(std::unique_ptr<LLMController> llmContr
 #endif
 {
     llm_ = std::move(llmController);
-    activeProvider_ = Cavey::AiProvider::kCustom;
+    activeProvider_ = Cavey::AiProvider::kNone;
     isProviderConnected_ = llm_ != nullptr;
 
     logger_.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
@@ -215,7 +215,6 @@ void CaveyAudioProcessor::addCaveyParameter(const juce::String& prompt) {
         throw std::runtime_error("Set up your AI provider before generating.");
     }
 
-    // Do this part async
     const juce::String response = this->llm_->prompt(prompt);
 
     boost::system::error_code errorCode;
@@ -303,9 +302,51 @@ juce::String CaveyAudioProcessor::getActiveProviderName() const {
     return Cavey::ToProviderDisplayName(activeProvider_);
 }
 
-bool CaveyAudioProcessor::hasStoredCredential(Cavey::AiProvider provider) const {
+bool CaveyAudioProcessor::hasRequiredEnvironmentVariable(
+        Cavey::AiProvider provider) const {
     auto controller = makeProviderController(provider);
-    return controller != nullptr && controller->hasStoredCredential();
+    return controller != nullptr && controller->hasRequiredEnvironmentVariable();
+}
+
+Cavey::EnvironmentVariableWriteResult
+CaveyAudioProcessor::saveProviderEnvironmentVariable(
+        Cavey::AiProvider provider,
+        const juce::String& value) const {
+    auto environment = Cavey::SystemEnvironmentVariableProvider();
+    switch (provider) {
+        case Cavey::AiProvider::kOpenAI:
+            return environment.saveEnvironmentVariable("OPENAI_API_KEY", value);
+        case Cavey::AiProvider::kAnthropic:
+            return environment.saveEnvironmentVariable("ANTHROPIC_API_KEY", value);
+        case Cavey::AiProvider::kOllama:
+        case Cavey::AiProvider::kNone:
+            break;
+    }
+
+    return {
+        .saved = false,
+        .message = "No API key environment variable for this provider."
+    };
+}
+
+Cavey::EnvironmentVariableWriteResult
+CaveyAudioProcessor::resetProviderEnvironmentVariable(
+        Cavey::AiProvider provider) const {
+    auto environment = Cavey::SystemEnvironmentVariableProvider();
+    switch (provider) {
+        case Cavey::AiProvider::kOpenAI:
+            return environment.removeEnvironmentVariable("OPENAI_API_KEY");
+        case Cavey::AiProvider::kAnthropic:
+            return environment.removeEnvironmentVariable("ANTHROPIC_API_KEY");
+        case Cavey::AiProvider::kOllama:
+        case Cavey::AiProvider::kNone:
+            break;
+    }
+
+    return {
+        .saved = false,
+        .message = "No API key environment variable for this provider."
+    };
 }
 
 std::unique_ptr<LLMController> CaveyAudioProcessor::makeProviderController(
@@ -317,7 +358,6 @@ std::unique_ptr<LLMController> CaveyAudioProcessor::makeProviderController(
             return std::make_unique<Cavey::AnthropicController>();
         case Cavey::AiProvider::kOllama:
             return std::make_unique<Cavey::OllamaController>();
-        case Cavey::AiProvider::kCustom:
         case Cavey::AiProvider::kNone:
             break;
     }

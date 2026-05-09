@@ -81,9 +81,9 @@ void CaveyAudioProcessorEditor::resized() {
     promptEditor.setBounds(promptBounds.reduced(CaveyUI::MARGIN_SMALL));
     auto reducedButtonBounds = buttonBounds.reduced(CaveyUI::MARGIN_EXTRA_SMALL,
                                                     CaveyUI::MARGIN_SMALL);
-    generateButton.setBounds(reducedButtonBounds.removeFromTop(
+    setupButton.setBounds(reducedButtonBounds.removeFromTop(
             reducedButtonBounds.getHeight() / 2).reduced(0, 2));
-    setupButton.setBounds(reducedButtonBounds.reduced(0, 2));
+    generateButton.setBounds(reducedButtonBounds.reduced(0, 2));
     errorToast.setBounds(getLocalBounds().withSizeKeepingCentre(360, 34));
     loadingOverlay.setBounds(screen);
 }
@@ -107,7 +107,6 @@ void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
 
 void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
     if (parameterKnobs.size() >= CaveyUI::MAX_PARAMETER_AMOUNT) {
-        // Error toast maybe
         return;
     }
 
@@ -152,13 +151,11 @@ void CaveyAudioProcessorEditor::whenSetupButtonClicked() {
     options.content.setOwned(new AiSetupComponent(
             audioProcessor,
             [safeThis](bool connected, const juce::String& message) {
+                juce::ignoreUnused(connected, message);
                 if (safeThis == nullptr) {
                     return;
                 }
 
-                if (!connected) {
-                    safeThis->showErrorToast(message);
-                }
                 safeThis->updateGenerateButtonEnabledState();
             }));
     options.launchAsync();

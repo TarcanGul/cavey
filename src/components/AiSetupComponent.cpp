@@ -10,6 +10,20 @@ constexpr int kNavWidth = 130;
 constexpr int kMargin = 16;
 constexpr int kRowHeight = 28;
 
+juce::String GetEnvironmentVariableName(Cavey::AiProvider provider) {
+    switch (provider) {
+        case Cavey::AiProvider::kOpenAI:
+            return "OPENAI_API_KEY";
+        case Cavey::AiProvider::kAnthropic:
+            return "ANTHROPIC_API_KEY";
+        case Cavey::AiProvider::kOllama:
+        case Cavey::AiProvider::kNone:
+            break;
+    }
+
+    return {};
+}
+
 }  // namespace
 
 AiSetupComponent::AiSetupComponent(
@@ -24,6 +38,8 @@ AiSetupComponent::AiSetupComponent(
              &anthropic_nav_button_,
              &ollama_nav_button_,
              &refresh_models_button_,
+             &save_key_button_,
+             &reset_key_button_,
              &connect_button_}) {
         button->addListener(this);
         addAndMakeVisible(button);
@@ -35,20 +51,14 @@ AiSetupComponent::AiSetupComponent(
                                 juce::Colours::lightgreen);
     status_label_.setJustificationType(juce::Justification::centredLeft);
 
-    openai_key_editor_.setPasswordCharacter(0x2022);
-    anthropic_key_editor_.setPasswordCharacter(0x2022);
-    openai_key_editor_.setTextToShowWhenEmpty("OpenAI API key",
-                                              juce::Colours::grey);
-    anthropic_key_editor_.setTextToShowWhenEmpty("Anthropic API key",
-                                                 juce::Colours::grey);
+    api_key_editor_.setPasswordCharacter(0x2022);
     ollama_model_box_.addListener(this);
 
     for (auto* component : std::initializer_list<juce::Component*>{
              &title_label_,
              &detail_label_,
              &stored_key_label_,
-             &openai_key_editor_,
-             &anthropic_key_editor_,
+             &api_key_editor_,
              &ollama_model_box_,
              &status_label_}) {
         addAndMakeVisible(component);
@@ -63,13 +73,14 @@ AiSetupComponent::~AiSetupComponent() {
              &anthropic_nav_button_,
              &ollama_nav_button_,
              &refresh_models_button_,
+             &save_key_button_,
+             &reset_key_button_,
              &connect_button_}) {
         button->removeListener(this);
     }
 
     ollama_model_box_.removeListener(this);
-    openai_key_editor_.clear();
-    anthropic_key_editor_.clear();
+    api_key_editor_.clear();
 }
 
 void AiSetupComponent::paint(juce::Graphics& graphics) {
@@ -96,9 +107,13 @@ void AiSetupComponent::resized() {
     stored_key_label_.setBounds(pane_bounds.removeFromTop(24));
     pane_bounds.removeFromTop(8);
 
-    openai_key_editor_.setBounds(pane_bounds.removeFromTop(32));
-    anthropic_key_editor_.setBounds(openai_key_editor_.getBounds());
-    ollama_model_box_.setBounds(openai_key_editor_.getBounds());
+    auto control_bounds = pane_bounds.removeFromTop(32);
+    auto api_key_bounds = control_bounds;
+    auto key_button_bounds = api_key_bounds.removeFromRight(96);
+    api_key_editor_.setBounds(api_key_bounds.reduced(0, 1));
+    save_key_button_.setBounds(key_button_bounds.reduced(6, 0));
+    reset_key_button_.setBounds(key_button_bounds.reduced(6, 0));
+    ollama_model_box_.setBounds(control_bounds);
 
     auto refresh_bounds = ollama_model_box_.getBounds().removeFromRight(96);
     refresh_models_button_.setBounds(refresh_bounds.reduced(4, 0));
@@ -118,6 +133,10 @@ void AiSetupComponent::buttonClicked(juce::Button* button) {
         selectProvider(Cavey::AiProvider::kOllama);
     } else if (button == &refresh_models_button_) {
         refreshOllamaModels();
+    } else if (button == &save_key_button_) {
+        saveSelectedProviderKey();
+    } else if (button == &reset_key_button_) {
+        resetSelectedProviderKey();
     } else if (button == &connect_button_) {
         connectSelectedProvider();
     }
@@ -141,9 +160,6 @@ void AiSetupComponent::refreshPane() {
     ollama_nav_button_.setToggleState(selected_provider_ == Cavey::AiProvider::kOllama,
                                       juce::dontSendNotification);
 
-    openai_key_editor_.setVisible(selected_provider_ == Cavey::AiProvider::kOpenAI);
-    anthropic_key_editor_.setVisible(
-            selected_provider_ == Cavey::AiProvider::kAnthropic);
     ollama_model_box_.setVisible(selected_provider_ == Cavey::AiProvider::kOllama);
     refresh_models_button_.setVisible(
             selected_provider_ == Cavey::AiProvider::kOllama);
@@ -154,6 +170,10 @@ void AiSetupComponent::refreshPane() {
     if (selected_provider_ == Cavey::AiProvider::kOllama) {
         detail_label_.setText("Use a model already downloaded in Ollama.",
                               juce::dontSendNotification);
+        stored_key_label_.setColour(juce::Label::textColourId,
+                                    ollama_model_box_.getText().isNotEmpty()
+                                            ? juce::Colours::lightgreen
+                                            : juce::Colours::grey);
         stored_key_label_.setText(ollama_model_box_.getText().isNotEmpty()
                                           ? "Model selected"
                                           : "Select a local model",
@@ -161,20 +181,39 @@ void AiSetupComponent::refreshPane() {
         if (ollama_model_box_.getNumItems() == 0) {
             refreshOllamaModels();
         }
+        api_key_editor_.setVisible(false);
+        save_key_button_.setVisible(false);
+        reset_key_button_.setVisible(false);
+        displayed_environment_variable_.clear();
     } else {
-        detail_label_.setText("Enter your API key to connect this provider.",
+        const auto environment_variable = GetEnvironmentVariableName(
+                selected_provider_);
+        if (displayed_environment_variable_ != environment_variable) {
+            displayed_environment_variable_ = environment_variable;
+            api_key_editor_.clear();
+        }
+        api_key_editor_.setTextToShowWhenEmpty(environment_variable,
+                                               juce::Colours::grey);
+        api_key_editor_.repaint();
+        detail_label_.setText("Set " + environment_variable,
                               juce::dontSendNotification);
+        const bool has_environment_variable =
+                processor_.hasRequiredEnvironmentVariable(selected_provider_);
+        stored_key_label_.setColour(juce::Label::textColourId,
+                                    has_environment_variable
+                                            ? juce::Colours::lightgreen
+                                            : juce::Colours::orange);
         stored_key_label_.setText(
-                processor_.hasStoredCredential(selected_provider_)
-                        ? "API key is set in secure storage"
-                        : "No API key stored",
+                has_environment_variable
+                        ? environment_variable + " is set"
+                        : environment_variable + " is not set",
                 juce::dontSendNotification);
+        api_key_editor_.setVisible(true);
+        save_key_button_.setVisible(!has_environment_variable);
+        reset_key_button_.setVisible(has_environment_variable);
     }
 
-    connect_button_.setButtonText(
-            selected_provider_ == Cavey::AiProvider::kOllama
-                    ? "Connect"
-                    : "Connect");
+    connect_button_.setButtonText("Connect");
     resized();
 }
 
@@ -216,13 +255,31 @@ void AiSetupComponent::refreshOllamaModels() {
     }).detach();
 }
 
+void AiSetupComponent::saveSelectedProviderKey() {
+    const auto result = processor_.saveProviderEnvironmentVariable(
+            selected_provider_,
+            api_key_editor_.getText());
+    setStatus(result.message, !result.saved);
+    if (result.saved) {
+        api_key_editor_.clear();
+        refreshPane();
+    }
+}
+
+void AiSetupComponent::resetSelectedProviderKey() {
+    const auto result = processor_.saveProviderEnvironmentVariable(
+            selected_provider_,
+            api_key_editor_.getText());
+    setStatus(result.message, !result.saved);
+    if (result.saved) {
+        api_key_editor_.clear();
+        refreshPane();
+    }
+}
+
 void AiSetupComponent::connectSelectedProvider() {
     Cavey::ProviderConnectionConfig config;
-    if (selected_provider_ == Cavey::AiProvider::kOpenAI) {
-        config.api_key = openai_key_editor_.getText();
-    } else if (selected_provider_ == Cavey::AiProvider::kAnthropic) {
-        config.api_key = anthropic_key_editor_.getText();
-    } else if (selected_provider_ == Cavey::AiProvider::kOllama) {
+    if (selected_provider_ == Cavey::AiProvider::kOllama) {
         config.ollama_model = ollama_model_box_.getText();
     }
 
@@ -239,8 +296,6 @@ void AiSetupComponent::connectSelectedProvider() {
                 return;
             }
 
-            safe_this->openai_key_editor_.clear();
-            safe_this->anthropic_key_editor_.clear();
             safe_this->setBusy(false);
             safe_this->setStatus(result.message, !result.connected);
             safe_this->refreshPane();
@@ -255,6 +310,8 @@ void AiSetupComponent::setBusy(bool should_be_busy) {
     is_busy_ = should_be_busy;
     connect_button_.setEnabled(!is_busy_);
     refresh_models_button_.setEnabled(!is_busy_);
+    save_key_button_.setEnabled(!is_busy_);
+    reset_key_button_.setEnabled(!is_busy_);
 }
 
 void AiSetupComponent::setStatus(const juce::String& status, bool is_error) {
