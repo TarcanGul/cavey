@@ -1,2 +1,7 @@
 build/
 cmake-build-debug/
+build-coverage/
+external/
+vcpkg_installed/
+.DS_Store
+.idea/
