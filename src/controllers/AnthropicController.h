@@ -22,6 +22,7 @@ public:
             const ProviderConnectionConfig& config) override;
     ProviderMetadata metadata() const override;
     bool hasRequiredEnvironmentVariable() const override;
+    AiProvider getProvider() override;
 
 private:
     static constexpr const char* kApiKeyEnvironmentVariable = "ANTHROPIC_API_KEY";

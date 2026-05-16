@@ -64,7 +64,7 @@ public:
     EnvironmentVariableWriteResult saveEnvironmentVariable(
             const juce::String& name,
             const juce::String& value) override {
-        if (!isSupportedApiKeyName(name)) {
+        if (!isSupportedVariableName(name)) {
             return {
                 .saved = false,
                 .message = "Unsupported environment variable."
@@ -97,7 +97,7 @@ public:
 
     EnvironmentVariableWriteResult removeEnvironmentVariable(
             const juce::String& name) override {
-        if (!isSupportedApiKeyName(name)) {
+        if (!isSupportedVariableName(name)) {
             return {
                 .saved = false,
                 .message = "Unsupported environment variable."
@@ -152,6 +152,11 @@ private:
         return name == "OPENAI_API_KEY" || name == "ANTHROPIC_API_KEY";
     }
 
+    static bool isSupportedVariableName(const juce::String& name) {
+        return isSupportedApiKeyName(name)
+                || name == "CAVEY_MAIN_AI_PROVIDER";
+    }
+
     static juce::String stripOptionalQuotes(juce::String value) {
         value = value.trim();
         if (value.length() >= 2
@@ -186,7 +191,7 @@ private:
             }
 
             const auto key = line.substring(0, separator_index).trim();
-            if (!isSupportedApiKeyName(key)) {
+            if (!isSupportedVariableName(key)) {
                 continue;
             }
 
@@ -206,7 +211,8 @@ private:
 
         juce::String contents;
         for (const auto& [key, saved_value] : config_values) {
-            if (isSupportedApiKeyName(key) && saved_value.trim().isNotEmpty()) {
+            if (isSupportedVariableName(key)
+                && saved_value.trim().isNotEmpty()) {
                 contents += key + "=" + saved_value.trim() + "\n";
             }
         }

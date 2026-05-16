@@ -297,6 +297,53 @@ TEST_CASE("System environment provider persists Cavey API keys", "[providers]") 
                 == "sk-anthropic");
     }
 
+    SECTION("Main AI provider can be saved and read back") {
+        Cavey::SystemEnvironmentVariableProvider environment(
+                config_file,
+                no_process_environment);
+
+        const auto result = environment.saveEnvironmentVariable(
+                "CAVEY_MAIN_AI_PROVIDER",
+                "anthropic");
+
+        INFO(result.message);
+        REQUIRE(result.saved);
+        REQUIRE(environment.getEnvironmentVariable(
+                "CAVEY_MAIN_AI_PROVIDER").value() == "anthropic");
+    }
+
+    SECTION("Saving API keys preserves the main AI provider") {
+        Cavey::SystemEnvironmentVariableProvider environment(
+                config_file,
+                no_process_environment);
+
+        REQUIRE(environment.saveEnvironmentVariable(
+                "CAVEY_MAIN_AI_PROVIDER",
+                "ollama").saved);
+        REQUIRE(environment.saveEnvironmentVariable(
+                "OPENAI_API_KEY",
+                "sk-openai").saved);
+
+        REQUIRE(environment.getEnvironmentVariable(
+                "CAVEY_MAIN_AI_PROVIDER").value() == "ollama");
+        REQUIRE(environment.getEnvironmentVariable("OPENAI_API_KEY").value()
+                == "sk-openai");
+    }
+
+    SECTION("Provider IDs resolve invalid saved values to none") {
+        Cavey::SystemEnvironmentVariableProvider environment(
+                config_file,
+                no_process_environment);
+
+        REQUIRE(environment.saveEnvironmentVariable(
+                "CAVEY_MAIN_AI_PROVIDER",
+                "not-a-provider").saved);
+
+        REQUIRE(Cavey::ToAiProvider(environment.getEnvironmentVariable(
+                "CAVEY_MAIN_AI_PROVIDER").value())
+                == Cavey::AiProvider::kNone);
+    }
+
     SECTION("Saving an existing OpenAI key overwrites its file value") {
         Cavey::SystemEnvironmentVariableProvider environment(
                 config_file,

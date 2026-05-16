@@ -11,7 +11,7 @@ namespace Cavey {
 
 class OpenAIController final : public LLMController {
 public:
-    OpenAIController(
+    explicit OpenAIController(
             std::shared_ptr<HttpTransport> http_transport =
                     std::make_shared<JuceHttpTransport>(),
             std::shared_ptr<EnvironmentVariableProvider> environment =
@@ -21,7 +21,8 @@ public:
     ProviderConnectionResult connect(
             const ProviderConnectionConfig& config) override;
     ProviderMetadata metadata() const override;
-    bool hasRequiredEnvironmentVariable() const override;
+    [[nodiscard]] bool hasRequiredEnvironmentVariable() const override;
+    AiProvider getProvider() override;
 
 private:
     static constexpr const char* kApiKeyEnvironmentVariable = "OPENAI_API_KEY";

@@ -31,6 +31,7 @@ private:
     void connectSelectedProvider();
     void saveSelectedProviderKey();
     void resetSelectedProviderKey();
+    void updateMainProviderSelection();
     void setBusy(bool should_be_busy);
     void setStatus(const juce::String& status, bool is_error);
 
@@ -51,6 +52,7 @@ private:
     juce::TextButton reset_key_button_ {"Reset"};
     juce::ComboBox ollama_model_box_;
     juce::TextButton refresh_models_button_ {"Refresh"};
+    juce::ToggleButton main_provider_toggle_ {"Main provider"};
     juce::TextButton connect_button_ {"Connect"};
     juce::Label status_label_;
 

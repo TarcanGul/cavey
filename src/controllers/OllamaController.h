@@ -25,6 +25,7 @@ public:
             const ProviderConnectionConfig& config) override;
     ProviderMetadata metadata() const override;
     juce::StringArray fetchModels() override;
+    AiProvider getProvider() override;
 
 private:
     static constexpr const char* kBaseUrl = "http://localhost:11434";

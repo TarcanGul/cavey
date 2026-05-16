@@ -25,6 +25,11 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     setupButton.setButtonText(CaveyUI::SETUP_BUTTON_TEXT);
     setupButton.addListener(this);
 
+    mainProviderLabel.setJustificationType(juce::Justification::centred);
+    mainProviderLabel.setColour(juce::Label::textColourId,
+                                juce::Colours::grey);
+    updateMainProviderLabel();
+
     errorToast.setJustificationType(juce::Justification::centred);
     errorToast.setColour(juce::Label::backgroundColourId,
                          juce::Colours::darkred.withAlpha(0.9f));
@@ -37,6 +42,7 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     addAndMakeVisible(&promptEditor);
     addAndMakeVisible(&generateButton);
     addAndMakeVisible(&setupButton);
+    addAndMakeVisible(&mainProviderLabel);
     addChildComponent(&errorToast);
     addChildComponent(&loadingOverlay);
     loadingOverlay.setVisible(false);
@@ -81,8 +87,9 @@ void CaveyAudioProcessorEditor::resized() {
     promptEditor.setBounds(promptBounds.reduced(CaveyUI::MARGIN_SMALL));
     auto reducedButtonBounds = buttonBounds.reduced(CaveyUI::MARGIN_EXTRA_SMALL,
                                                     CaveyUI::MARGIN_SMALL);
-    setupButton.setBounds(reducedButtonBounds.removeFromTop(
-            reducedButtonBounds.getHeight() / 2).reduced(0, 2));
+    setupButton.setBounds(reducedButtonBounds.removeFromTop(38).reduced(0, 2));
+    mainProviderLabel.setBounds(
+            reducedButtonBounds.removeFromTop(28).reduced(0, 2));
     generateButton.setBounds(reducedButtonBounds.reduced(0, 2));
     errorToast.setBounds(getLocalBounds().withSizeKeepingCentre(360, 34));
     loadingOverlay.setBounds(screen);
@@ -156,6 +163,7 @@ void CaveyAudioProcessorEditor::whenSetupButtonClicked() {
                     return;
                 }
 
+                safeThis->updateMainProviderLabel();
                 safeThis->updateGenerateButtonEnabledState();
             }));
     options.launchAsync();
@@ -215,15 +223,17 @@ void CaveyAudioProcessorEditor::actionListenerCallback(const juce::String &messa
         return;
     }
 
-    if (message == "AI_PROVIDER_CONNECTED") {
+    if (message == "AI_PROVIDER_CONNECTED"
+        || message == "AI_MAIN_PROVIDER_CHANGED") {
         juce::MessageManager::callAsync([this] {
+            updateMainProviderLabel();
             updateGenerateButtonEnabledState();
         });
         return;
     }
 
     // Right now it is hardcoded, only processor will send parameter name, can be changed later
-    const juce::String parameterName {message};
+    const juce::String& parameterName {message};
 
     juce::Logger::writeToLog("Parameter is added via the callback");
 
@@ -273,6 +283,11 @@ void CaveyAudioProcessorEditor::updateGenerateButtonEnabledState() {
     } else {
         generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_LOADING);
     }
+}
+
+void CaveyAudioProcessorEditor::updateMainProviderLabel() {
+    mainProviderLabel.setText("Main AI: " + audioProcessor.getMainAiProviderName(),
+                              juce::dontSendNotification);
 }
 
 void CaveyAudioProcessorEditor::showErrorToast(const juce::String& message) {

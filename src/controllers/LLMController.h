@@ -34,12 +34,14 @@ struct ProviderConnectionResult {
 
 juce::String ToProviderId(AiProvider provider);
 juce::String ToProviderDisplayName(AiProvider provider);
+AiProvider ToAiProvider(const juce::String& provider_id);
 
 }  // namespace Cavey
 
 class LLMController {
 public:
     virtual juce::String prompt(const juce::String& prompt) = 0;
+    virtual Cavey::AiProvider getProvider();
     virtual Cavey::ProviderConnectionResult connect(
             const Cavey::ProviderConnectionConfig& config) = 0;
     virtual Cavey::ProviderMetadata metadata() const = 0;

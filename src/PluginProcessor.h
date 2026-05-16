@@ -12,6 +12,8 @@ class CaveyAudioProcessor : public juce::AudioProcessor, public juce::ActionBroa
 public:
     CaveyAudioProcessor();
     explicit CaveyAudioProcessor(std::unique_ptr<LLMController> llmController);
+    explicit CaveyAudioProcessor(
+            std::shared_ptr<Cavey::EnvironmentVariableProvider> environment);
     ~CaveyAudioProcessor() override;
 
     // AudioProcessor overrides
@@ -55,14 +57,14 @@ public:
     juce::String getGeneratedParameterName() const;
     void clearGeneratedParameter() noexcept;
 
-    Cavey::ProviderConnectionResult connectAiProvider(
-            Cavey::AiProvider provider,
-            const Cavey::ProviderConnectionConfig& config);
+    Cavey::ProviderConnectionResult connectAiProvider(const Cavey::ProviderConnectionConfig& config);
     juce::StringArray fetchOllamaModels();
     bool isAiProviderConnected() const noexcept;
-    Cavey::AiProvider getActiveProvider() const noexcept;
-    juce::String getActiveProviderName() const;
-    bool hasRequiredEnvironmentVariable(Cavey::AiProvider provider) const;
+    Cavey::AiProvider getMainAiProvider() const noexcept;
+    juce::String getMainAiProviderName() const;
+    Cavey::EnvironmentVariableWriteResult saveMainAiProvider(
+            Cavey::AiProvider provider);
+    bool hasRequiredEnvironmentVariable() const;
     Cavey::EnvironmentVariableWriteResult saveProviderEnvironmentVariable(
             Cavey::AiProvider provider,
             const juce::String& value) const;
@@ -71,12 +73,16 @@ public:
 private:
     // TODO: Maybe a struct instead of `const std::map<Cavey::BaseEffect, float>& coefficients`?
     void addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients);
-    std::unique_ptr<LLMController> makeProviderController(Cavey::AiProvider provider) const;
+    void setProviderController(Cavey::AiProvider provider);
+    void loadMainAiProvider();
 
     juce::AudioProcessorValueTreeState apvts_;
     std::unique_ptr<LLMController> llm_;
+    std::shared_ptr<Cavey::EnvironmentVariableProvider> environment_;
     Cavey::AiProvider activeProvider_ = Cavey::AiProvider::kNone;
+    Cavey::AiProvider main_provider_ = Cavey::AiProvider::kNone;
     bool isProviderConnected_ = false;
+    bool uses_injected_llm_ = false;
     std::unique_ptr<BackendParameter> generatedParameter_;
     float lastCutoffHz_ { 20000.0f };
     float lastTargetGain_ { 1.0 };

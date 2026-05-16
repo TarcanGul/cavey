@@ -2,6 +2,7 @@
 
 namespace Cavey {
 
+
 juce::String ToProviderId(AiProvider provider) {
     switch (provider) {
         case AiProvider::kOpenAI:
@@ -32,4 +33,23 @@ juce::String ToProviderDisplayName(AiProvider provider) {
     return "No provider";
 }
 
+AiProvider ToAiProvider(const juce::String& provider_id) {
+    const auto normalized_provider_id = provider_id.trim().toLowerCase();
+    if (normalized_provider_id == "openai") {
+        return AiProvider::kOpenAI;
+    }
+    if (normalized_provider_id == "anthropic") {
+        return AiProvider::kAnthropic;
+    }
+    if (normalized_provider_id == "ollama") {
+        return AiProvider::kOllama;
+    }
+
+    return AiProvider::kNone;
+}
+
 }  // namespace Cavey
+
+Cavey::AiProvider LLMController::getProvider() {
+    return Cavey::AiProvider::kNone;
+}

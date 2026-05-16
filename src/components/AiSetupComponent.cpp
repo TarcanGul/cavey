@@ -33,13 +33,14 @@ AiSetupComponent::AiSetupComponent(
       completion_callback_(std::move(completion_callback)) {
     setSize(kDialogWidth, kDialogHeight);
 
-    for (auto* button : {
+    for (auto* button : std::initializer_list<juce::Button*>{
              &openai_nav_button_,
              &anthropic_nav_button_,
              &ollama_nav_button_,
              &refresh_models_button_,
              &save_key_button_,
              &reset_key_button_,
+             &main_provider_toggle_,
              &connect_button_}) {
         button->addListener(this);
         addAndMakeVisible(button);
@@ -60,6 +61,7 @@ AiSetupComponent::AiSetupComponent(
              &stored_key_label_,
              &api_key_editor_,
              &ollama_model_box_,
+             &main_provider_toggle_,
              &status_label_}) {
         addAndMakeVisible(component);
     }
@@ -68,13 +70,14 @@ AiSetupComponent::AiSetupComponent(
 }
 
 AiSetupComponent::~AiSetupComponent() {
-    for (auto* button : {
+    for (auto* button : std::initializer_list<juce::Button*>{
              &openai_nav_button_,
              &anthropic_nav_button_,
              &ollama_nav_button_,
              &refresh_models_button_,
              &save_key_button_,
              &reset_key_button_,
+             &main_provider_toggle_,
              &connect_button_}) {
         button->removeListener(this);
     }
@@ -119,6 +122,8 @@ void AiSetupComponent::resized() {
     refresh_models_button_.setBounds(refresh_bounds.reduced(4, 0));
 
     pane_bounds.removeFromTop(16);
+    main_provider_toggle_.setBounds(pane_bounds.removeFromTop(28));
+    pane_bounds.removeFromTop(8);
     connect_button_.setBounds(pane_bounds.removeFromTop(34).removeFromLeft(120));
     pane_bounds.removeFromTop(10);
     status_label_.setBounds(pane_bounds.removeFromTop(44));
@@ -137,6 +142,8 @@ void AiSetupComponent::buttonClicked(juce::Button* button) {
         saveSelectedProviderKey();
     } else if (button == &reset_key_button_) {
         resetSelectedProviderKey();
+    } else if (button == &main_provider_toggle_) {
+        updateMainProviderSelection();
     } else if (button == &connect_button_) {
         connectSelectedProvider();
     }
@@ -166,6 +173,11 @@ void AiSetupComponent::refreshPane() {
 
     title_label_.setText(Cavey::ToProviderDisplayName(selected_provider_),
                          juce::dontSendNotification);
+    main_provider_toggle_.setVisible(selected_provider_
+                                     != Cavey::AiProvider::kNone);
+    main_provider_toggle_.setToggleState(
+            processor_.getMainAiProvider() == selected_provider_,
+            juce::dontSendNotification);
 
     if (selected_provider_ == Cavey::AiProvider::kOllama) {
         detail_label_.setText("Use a model already downloaded in Ollama.",
@@ -198,7 +210,7 @@ void AiSetupComponent::refreshPane() {
         detail_label_.setText("Set " + environment_variable,
                               juce::dontSendNotification);
         const bool has_environment_variable =
-                processor_.hasRequiredEnvironmentVariable(selected_provider_);
+                processor_.hasRequiredEnvironmentVariable();
         stored_key_label_.setColour(juce::Label::textColourId,
                                     has_environment_variable
                                             ? juce::Colours::lightgreen
@@ -277,20 +289,43 @@ void AiSetupComponent::resetSelectedProviderKey() {
     }
 }
 
+void AiSetupComponent::updateMainProviderSelection() {
+    const auto current_main_provider = processor_.getMainAiProvider();
+    if (main_provider_toggle_.getToggleState()
+        && current_main_provider != Cavey::AiProvider::kNone
+        && current_main_provider != selected_provider_) {
+        main_provider_toggle_.setToggleState(false, juce::dontSendNotification);
+        setStatus(processor_.getMainAiProviderName()
+                          + " is the main provider. Disable it first.",
+                  true);
+        return;
+    }
+
+    const auto provider_to_save = main_provider_toggle_.getToggleState()
+            ? selected_provider_
+            : Cavey::AiProvider::kNone;
+    const auto result = processor_.saveMainAiProvider(provider_to_save);
+    setStatus(result.message, !result.saved);
+    refreshPane();
+    if (completion_callback_) {
+        completion_callback_(result.saved, result.message);
+    }
+}
+
 void AiSetupComponent::connectSelectedProvider() {
     Cavey::ProviderConnectionConfig config;
     if (selected_provider_ == Cavey::AiProvider::kOllama) {
         config.ollama_model = ollama_model_box_.getText();
+        juce::Logger::writeToLog("ollama_model is " + config.ollama_model);
     }
 
     setBusy(true);
     setStatus({}, false);
-    const auto provider = selected_provider_;
     const juce::Component::SafePointer<AiSetupComponent> safe_this(this);
     CaveyAudioProcessor& processor = processor_;
 
-    std::thread([safe_this, &processor, provider, config] {
-        auto result = processor.connectAiProvider(provider, config);
+    std::thread([safe_this, &processor, config] {
+        auto result = processor.connectAiProvider(config);
         juce::MessageManager::callAsync([safe_this, result] {
             if (safe_this == nullptr) {
                 return;
@@ -312,6 +347,7 @@ void AiSetupComponent::setBusy(bool should_be_busy) {
     refresh_models_button_.setEnabled(!is_busy_);
     save_key_button_.setEnabled(!is_busy_);
     reset_key_button_.setEnabled(!is_busy_);
+    main_provider_toggle_.setEnabled(!is_busy_);
 }
 
 void AiSetupComponent::setStatus(const juce::String& status, bool is_error) {

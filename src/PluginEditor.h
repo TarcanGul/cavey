@@ -11,7 +11,7 @@
 namespace CaveyUI {
     static constexpr int MARGIN_EXTRA_SMALL = 10;
     static constexpr int MARGIN_SMALL = 20;
-    static constexpr int PROMPT_WIDTH = 100;
+    static constexpr int PROMPT_WIDTH = 130;
     static constexpr int PROMPT_HEIGHT = 200;
     static constexpr int INIT_SCREEN_WIDTH = 600;
     static constexpr int INIT_SCREEN_HEIGHT = 400;
@@ -60,6 +60,7 @@ private:
 
     void setLoading(bool desiredLoadingState);
     void updateGenerateButtonEnabledState();
+    void updateMainProviderLabel();
 
     std::optional<Parameter *> getParameterGroup(Button * buttonRef);
     CaveyAudioProcessor& audioProcessor;
@@ -67,6 +68,7 @@ private:
     TextEditor promptEditor;
     TextButton generateButton;
     TextButton setupButton;
+    Label mainProviderLabel;
     TooltipWindow tooltipWindow;
     Label errorToast;
 

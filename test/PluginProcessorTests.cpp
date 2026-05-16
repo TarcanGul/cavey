@@ -2,6 +2,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cmath>
+#include <map>
 #include <memory>
 
 #include "PluginProcessor.h"
@@ -38,6 +39,46 @@ public:
 
 private:
     juce::String response_;
+};
+
+class FakeEnvironmentVariableProvider final
+        : public Cavey::EnvironmentVariableProvider {
+public:
+    void set(const juce::String& name, const juce::String& value) {
+        values_[name] = value;
+    }
+
+    std::optional<juce::String> getEnvironmentVariable(
+            const juce::String& name) const override {
+        const auto it = values_.find(name);
+        if (it == values_.end() || it->second.trim().isEmpty()) {
+            return std::nullopt;
+        }
+
+        return it->second;
+    }
+
+    Cavey::EnvironmentVariableWriteResult saveEnvironmentVariable(
+            const juce::String& name,
+            const juce::String& value) override {
+        values_[name] = value;
+        return {
+            .saved = true,
+            .message = name + " saved."
+        };
+    }
+
+    Cavey::EnvironmentVariableWriteResult removeEnvironmentVariable(
+            const juce::String& name) override {
+        values_.erase(name);
+        return {
+            .saved = true,
+            .message = name + " reset."
+        };
+    }
+
+private:
+    std::map<juce::String, juce::String> values_;
 };
 
 std::unique_ptr<MockLLMController> MakeMockController() {
@@ -85,7 +126,8 @@ bool HasFiniteSamples(const juce::AudioBuffer<float>& buffer) {
 }  // namespace
 
 TEST_CASE("Generate is rejected before AI setup", "[processor]") {
-    CaveyAudioProcessor processor;
+    CaveyAudioProcessor processor(
+            std::make_shared<FakeEnvironmentVariableProvider>());
 
     REQUIRE_FALSE(processor.isAiProviderConnected());
     try {
@@ -94,6 +136,51 @@ TEST_CASE("Generate is rejected before AI setup", "[processor]") {
     } catch (const std::exception& exception) {
         REQUIRE(juce::String(exception.what())
                 == "Set up your AI provider before generating.");
+    }
+}
+
+TEST_CASE("Main AI provider is persisted and drives generation", "[processor]") {
+    SECTION("Persisted provider is loaded on construction") {
+        auto environment =
+                std::make_shared<FakeEnvironmentVariableProvider>();
+        environment->set("CAVEY_MAIN_AI_PROVIDER", "anthropic");
+
+        CaveyAudioProcessor processor(environment);
+
+        REQUIRE(processor.getMainAiProvider()
+                == Cavey::AiProvider::kAnthropic);
+        REQUIRE(processor.getMainAiProviderName() == "Anthropic");
+        REQUIRE(processor.isAiProviderConnected());
+    }
+
+    SECTION("Saving the main provider updates persisted state") {
+        auto environment =
+                std::make_shared<FakeEnvironmentVariableProvider>();
+        CaveyAudioProcessor processor(environment);
+
+        const auto result = processor.saveMainAiProvider(
+                Cavey::AiProvider::kOpenAI);
+
+        INFO(result.message);
+        REQUIRE(result.saved);
+        REQUIRE(processor.getMainAiProvider() == Cavey::AiProvider::kOpenAI);
+        REQUIRE(environment->getEnvironmentVariable(
+                "CAVEY_MAIN_AI_PROVIDER").value() == "openai");
+    }
+
+    SECTION("Selected hosted provider fails at runtime without API key") {
+        auto environment =
+                std::make_shared<FakeEnvironmentVariableProvider>();
+        environment->set("CAVEY_MAIN_AI_PROVIDER", "openai");
+        CaveyAudioProcessor processor(environment);
+
+        try {
+            processor.addCaveyParameter("make it warm");
+            FAIL("Expected selected provider to fail without an API key.");
+        } catch (const std::exception& exception) {
+            REQUIRE(juce::String(exception.what())
+                    == "OPENAI_API_KEY environment variable is not set.");
+        }
     }
 }
 

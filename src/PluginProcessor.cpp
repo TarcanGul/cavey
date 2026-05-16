@@ -13,9 +13,11 @@ CaveyAudioProcessor::CaveyAudioProcessor()
         AudioProcessor(BusesProperties()
         .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
         .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-        apvts_(*this, nullptr, juce::Identifier("Cavey"), {})
+        apvts_(*this, nullptr, juce::Identifier("Cavey"), {}),
+        environment_(std::make_shared<Cavey::SystemEnvironmentVariableProvider>())
 #endif
 {
+    loadMainAiProvider();
     logger_.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
     juce::Logger::setCurrentLogger(logger_.get());
     juce::Logger::writeToLog("Audio processor is initiated.");
@@ -27,12 +29,37 @@ CaveyAudioProcessor::CaveyAudioProcessor(std::unique_ptr<LLMController> llmContr
         AudioProcessor(BusesProperties()
         .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
         .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-        apvts_(*this, nullptr, juce::Identifier("Cavey"), {})
+        apvts_(*this, nullptr, juce::Identifier("Cavey"), {}),
+        environment_(std::make_shared<Cavey::SystemEnvironmentVariableProvider>())
 #endif
 {
     llm_ = std::move(llmController);
     activeProvider_ = Cavey::AiProvider::kNone;
     isProviderConnected_ = llm_ != nullptr;
+    uses_injected_llm_ = llm_ != nullptr;
+    loadMainAiProvider();
+
+    logger_.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
+    juce::Logger::setCurrentLogger(logger_.get());
+    juce::Logger::writeToLog("Audio processor is initiated.");
+}
+
+CaveyAudioProcessor::CaveyAudioProcessor(
+        std::shared_ptr<Cavey::EnvironmentVariableProvider> environment)
+    :
+#ifndef JucePlugin_PreferredChannelConfigurations
+        AudioProcessor(BusesProperties()
+        .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+        apvts_(*this, nullptr, juce::Identifier("Cavey"), {}),
+        environment_(std::move(environment))
+#endif
+{
+    if (environment_ == nullptr) {
+        environment_ =
+                std::make_shared<Cavey::SystemEnvironmentVariableProvider>();
+    }
+    loadMainAiProvider();
 
     logger_.reset(juce::FileLogger::createDefaultAppLogger("Cavey", "cavey.log", "Welcome to Cavey!"));
     juce::Logger::setCurrentLogger(logger_.get());
@@ -211,11 +238,21 @@ void CaveyAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 }
 
 void CaveyAudioProcessor::addCaveyParameter(const juce::String& prompt) {
-    if (!isProviderConnected_ || llm_ == nullptr) {
+    if (main_provider_ == Cavey::AiProvider::kNone && !uses_injected_llm_) {
         throw std::runtime_error("Set up your AI provider before generating.");
     }
 
-    const juce::String response = this->llm_->prompt(prompt);
+    if (llm_ == nullptr || main_provider_ == Cavey::AiProvider::kNone || llm_->getProvider() != main_provider_) {
+        setProviderController(main_provider_);
+        activeProvider_ = main_provider_;
+        isProviderConnected_ = llm_ != nullptr;
+    }
+
+    if (llm_ == nullptr) {
+        throw std::runtime_error("Set up your AI provider before generating.");
+    }
+
+    const juce::String response = llm_->prompt(prompt);
 
     boost::system::error_code errorCode;
     const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
@@ -259,65 +296,82 @@ void CaveyAudioProcessor::clearGeneratedParameter() noexcept {
 }
 
 Cavey::ProviderConnectionResult CaveyAudioProcessor::connectAiProvider(
-        Cavey::AiProvider provider,
         const Cavey::ProviderConnectionConfig& config) {
-    auto controller = makeProviderController(provider);
-    if (controller == nullptr) {
-        return {
-            .connected = false,
-            .message = "Unknown AI provider."
-        };
-    }
 
-    auto result = controller->connect(config);
+    auto result = llm_->connect(config);
     if (!result.connected) {
         return result;
     }
 
-    llm_ = std::move(controller);
-    activeProvider_ = provider;
     isProviderConnected_ = true;
     sendActionMessage("AI_PROVIDER_CONNECTED");
     return result;
 }
 
 juce::StringArray CaveyAudioProcessor::fetchOllamaModels() {
-    auto controller = makeProviderController(Cavey::AiProvider::kOllama);
-    if (controller == nullptr) {
+    if (llm_ == nullptr) {
         return {};
     }
 
-    return controller->fetchModels();
+    return llm_->fetchModels();
 }
 
 bool CaveyAudioProcessor::isAiProviderConnected() const noexcept {
-    return isProviderConnected_;
+    return main_provider_ != Cavey::AiProvider::kNone || uses_injected_llm_;
 }
 
-Cavey::AiProvider CaveyAudioProcessor::getActiveProvider() const noexcept {
-    return activeProvider_;
+Cavey::AiProvider CaveyAudioProcessor::getMainAiProvider() const noexcept {
+    return main_provider_;
 }
 
-juce::String CaveyAudioProcessor::getActiveProviderName() const {
-    return Cavey::ToProviderDisplayName(activeProvider_);
+juce::String CaveyAudioProcessor::getMainAiProviderName() const {
+    if (main_provider_ == Cavey::AiProvider::kNone) {
+        return "None";
+    }
+
+    return Cavey::ToProviderDisplayName(main_provider_);
 }
 
-bool CaveyAudioProcessor::hasRequiredEnvironmentVariable(
-        Cavey::AiProvider provider) const {
-    auto controller = makeProviderController(provider);
-    return controller != nullptr && controller->hasRequiredEnvironmentVariable();
+Cavey::EnvironmentVariableWriteResult CaveyAudioProcessor::saveMainAiProvider(
+        Cavey::AiProvider provider) {
+    if (provider == Cavey::AiProvider::kNone
+        || provider == Cavey::AiProvider::kOpenAI
+        || provider == Cavey::AiProvider::kAnthropic
+        || provider == Cavey::AiProvider::kOllama) {
+        const auto result = environment_->saveEnvironmentVariable(
+                "CAVEY_MAIN_AI_PROVIDER",
+                Cavey::ToProviderId(provider));
+        if (result.saved) {
+            main_provider_ = provider;
+            if (provider == Cavey::AiProvider::kNone) {
+                isProviderConnected_ = llm_ != nullptr;
+            }
+            sendActionMessage("AI_MAIN_PROVIDER_CHANGED");
+        }
+        return result;
+    }
+
+    return {
+        .saved = false,
+        .message = "Unsupported AI provider."
+    };
+}
+
+bool CaveyAudioProcessor::hasRequiredEnvironmentVariable() const {
+    return llm_ != nullptr && llm_->hasRequiredEnvironmentVariable();
 }
 
 Cavey::EnvironmentVariableWriteResult
 CaveyAudioProcessor::saveProviderEnvironmentVariable(
         Cavey::AiProvider provider,
         const juce::String& value) const {
-    auto environment = Cavey::SystemEnvironmentVariableProvider();
     switch (provider) {
         case Cavey::AiProvider::kOpenAI:
-            return environment.saveEnvironmentVariable("OPENAI_API_KEY", value);
+            return environment_->saveEnvironmentVariable("OPENAI_API_KEY", value);
         case Cavey::AiProvider::kAnthropic:
-            return environment.saveEnvironmentVariable("ANTHROPIC_API_KEY", value);
+            return environment_->saveEnvironmentVariable(
+                    "ANTHROPIC_API_KEY",
+                    value);
         case Cavey::AiProvider::kOllama:
         case Cavey::AiProvider::kNone:
             break;
@@ -332,12 +386,12 @@ CaveyAudioProcessor::saveProviderEnvironmentVariable(
 Cavey::EnvironmentVariableWriteResult
 CaveyAudioProcessor::resetProviderEnvironmentVariable(
         Cavey::AiProvider provider) const {
-    auto environment = Cavey::SystemEnvironmentVariableProvider();
     switch (provider) {
         case Cavey::AiProvider::kOpenAI:
-            return environment.removeEnvironmentVariable("OPENAI_API_KEY");
+            return environment_->removeEnvironmentVariable("OPENAI_API_KEY");
         case Cavey::AiProvider::kAnthropic:
-            return environment.removeEnvironmentVariable("ANTHROPIC_API_KEY");
+            return environment_->removeEnvironmentVariable(
+                    "ANTHROPIC_API_KEY");
         case Cavey::AiProvider::kOllama:
         case Cavey::AiProvider::kNone:
             break;
@@ -349,20 +403,45 @@ CaveyAudioProcessor::resetProviderEnvironmentVariable(
     };
 }
 
-std::unique_ptr<LLMController> CaveyAudioProcessor::makeProviderController(
-        Cavey::AiProvider provider) const {
+void CaveyAudioProcessor::setProviderController(
+        Cavey::AiProvider provider) {
+    if (llm_ != nullptr && llm_->getProvider() == provider) {
+        return; // do not create a new instance
+    }
+
     switch (provider) {
         case Cavey::AiProvider::kOpenAI:
-            return std::make_unique<Cavey::OpenAIController>();
+            llm_ = std::make_unique<Cavey::OpenAIController>(
+                    std::make_shared<Cavey::JuceHttpTransport>(),
+                    environment_);
+            break;
         case Cavey::AiProvider::kAnthropic:
-            return std::make_unique<Cavey::AnthropicController>();
+            llm_ = std::make_unique<Cavey::AnthropicController>(
+                    std::make_shared<Cavey::JuceHttpTransport>(),
+                    environment_);
+            break;
         case Cavey::AiProvider::kOllama:
-            return std::make_unique<Cavey::OllamaController>();
+            llm_ = std::make_unique<Cavey::OllamaController>();
+            break;
         case Cavey::AiProvider::kNone:
             break;
     }
 
-    return nullptr;
+    activeProvider_ = provider;
+}
+
+void CaveyAudioProcessor::loadMainAiProvider() {
+    if (environment_ == nullptr) {
+        main_provider_ = Cavey::AiProvider::kNone;
+        return;
+    }
+
+    const auto provider_id = environment_->getEnvironmentVariable(
+            "CAVEY_MAIN_AI_PROVIDER");
+    main_provider_ = provider_id.has_value()
+            ? Cavey::ToAiProvider(*provider_id)
+            : Cavey::AiProvider::kNone;
+    activeProvider_ = main_provider_;
 }
 
 // This creates new instances of the plugin
