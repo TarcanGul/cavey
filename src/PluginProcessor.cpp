@@ -238,6 +238,36 @@ void CaveyAudioProcessor::clearGeneratedParameter() noexcept {
     generatedParameter_.reset();
 }
 
+juce::StringArray CaveyAudioProcessor::fetchOllamaModels() {
+    if (auto* ollamaController = dynamic_cast<OllamaController*>(llm_.get())) {
+        return ollamaController->fetchModels();
+    }
+
+    return {};
+}
+
+juce::String CaveyAudioProcessor::getSelectedOllamaModel() const {
+    if (const auto* ollamaController = dynamic_cast<const OllamaController*>(llm_.get())) {
+        return ollamaController->getSelectedModel();
+    }
+
+    return {};
+}
+
+void CaveyAudioProcessor::setSelectedOllamaModel(const juce::String& model) {
+    if (auto* ollamaController = dynamic_cast<OllamaController*>(llm_.get())) {
+        ollamaController->setSelectedModel(model);
+    }
+}
+
+bool CaveyAudioProcessor::hasSelectedOllamaModel() const {
+    if (const auto* ollamaController = dynamic_cast<const OllamaController*>(llm_.get())) {
+        return ollamaController->hasSelectedModel();
+    }
+
+    return true;
+}
+
 // This creates new instances of the plugin
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {

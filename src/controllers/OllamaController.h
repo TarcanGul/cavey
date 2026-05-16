@@ -34,11 +34,14 @@ private:
     // TODO: maybe parametrize
     static constexpr std::string_view OLLAMA_HOST = "localhost";
     static constexpr std::string_view OLLAMA_PORT = "11434";
-    static constexpr std::string_view OLLAMA_MODEL = "gemma3:1b";
 
     std::string systemPrompt {};
+    juce::String selectedModel_;
 public:
     explicit OllamaController();
     String prompt(String const& prompt) override;
+    juce::StringArray fetchModels();
+    juce::String getSelectedModel() const;
+    void setSelectedModel(const juce::String& model);
+    bool hasSelectedModel() const;
 };
-

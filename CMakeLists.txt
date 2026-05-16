@@ -52,6 +52,7 @@ target_sources(CaveyPlugin PRIVATE
     src/types/BackendParameter.cpp
     src/components/Parameter.cpp
     src/components/LoadingComponent.cpp
+    src/components/AiSetupComponent.cpp
     src/controllers/OllamaController.cpp
     src/effects/CaveyEffects.cpp
 
@@ -106,6 +107,7 @@ add_executable(CaveyTests
     src/types/BackendParameter.cpp
     src/components/Parameter.cpp
     src/components/LoadingComponent.cpp
+    src/components/AiSetupComponent.cpp
     src/controllers/OllamaController.cpp
     src/effects/CaveyEffects.cpp
 )

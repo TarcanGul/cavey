@@ -4,6 +4,7 @@
 #include <vector>
 #include <iterator>
 #include <utility>
+#include "components/AiSetupComponent.h"
 #include "components/Parameter.h"
 #include "components/LoadingComponent.h"
 
@@ -12,6 +13,7 @@ namespace CaveyUI {
     static constexpr int MARGIN_SMALL = 20;
     static constexpr int PROMPT_WIDTH = 100;
     static constexpr int PROMPT_HEIGHT = 200;
+    static constexpr int AI_SETUP_BUTTON_GAP = 6;
     static constexpr int INIT_SCREEN_WIDTH = 600;
     static constexpr int INIT_SCREEN_HEIGHT = 400;
     static constexpr int MAX_PARAMETER_AMOUNT = 1;
@@ -26,6 +28,8 @@ namespace CaveyUI {
     static constexpr const char * GENERATE_TOOLTIP_PARAMETER_EXISTS = "Only one parameter can be created.";
     static constexpr const char * GENERATE_TOOLTIP_EMPTY_PROMPT = "Enter a prompt to generate.";
     static constexpr const char * GENERATE_TOOLTIP_LOADING = "Generating parameter...";
+    static constexpr const char * GENERATE_TOOLTIP_MODEL_REQUIRED = "Select an Ollama model in AI setup first.";
+    static constexpr const char * AI_SETUP_BUTTON_TEXT = "AI";
 }
 
 class CaveyAudioProcessor;
@@ -44,6 +48,7 @@ public:
 
 private:
     void buttonClicked(Button * buttonRef) override;
+    void openAiSetupDialog();
     void whenGenerateButtonClicked();
     void whenRemoveParameterButtonClicked(Parameter * parameterGroup);
     void addParameterControl(const juce::String& parameterName);
@@ -60,6 +65,7 @@ private:
     CaveyAudioProcessor& audioProcessor;
     Label mainLabel;
     TextEditor promptEditor;
+    TextButton aiSetupButton;
     TextButton generateButton;
     TooltipWindow tooltipWindow;
 

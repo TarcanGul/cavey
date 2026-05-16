@@ -19,12 +19,17 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
         updateGenerateButtonEnabledState();
     };
 
+    aiSetupButton.setButtonText(CaveyUI::AI_SETUP_BUTTON_TEXT);
+    aiSetupButton.setTooltip("Configure Ollama model");
+    aiSetupButton.addListener(this);
+
     generateButton.setButtonText(CaveyUI::GENERATE_BUTTON_TEXT);
     generateButton.addListener(this);
     updateGenerateButtonEnabledState();
 
     addAndMakeVisible(&mainLabel);
     addAndMakeVisible(&promptEditor);
+    addAndMakeVisible(&aiSetupButton);
     addAndMakeVisible(&generateButton);
     addChildComponent(&loadingOverlay);
     loadingOverlay.setVisible(false);
@@ -39,6 +44,7 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
 }
 
 CaveyAudioProcessorEditor::~CaveyAudioProcessorEditor() {
+    aiSetupButton.removeListener(this);
     generateButton.removeListener(this);
     promptEditor.onTextChange = nullptr;
     for (auto parameter : parameterKnobs) {
@@ -64,9 +70,16 @@ void CaveyAudioProcessorEditor::resized() {
         renderParameterKnobs();
     }
 
-    // Divide the screen to four areas (header - main area - text area - footer)
+    // Divide the bottom prompt area between the text editor and prompt controls.
     promptEditor.setBounds(promptBounds.reduced(CaveyUI::MARGIN_SMALL));
-    generateButton.setBounds(buttonBounds.reduced(CaveyUI::MARGIN_EXTRA_SMALL, CaveyUI::MARGIN_SMALL));
+    auto promptButtonBounds = buttonBounds.reduced(CaveyUI::MARGIN_EXTRA_SMALL, CaveyUI::MARGIN_SMALL);
+    const int combinedButtonHeight =
+        promptButtonBounds.getHeight() - CaveyUI::AI_SETUP_BUTTON_GAP;
+    const int aiSetupButtonHeight = combinedButtonHeight / 4;
+
+    aiSetupButton.setBounds(promptButtonBounds.removeFromTop(aiSetupButtonHeight));
+    promptButtonBounds.removeFromTop(CaveyUI::AI_SETUP_BUTTON_GAP);
+    generateButton.setBounds(promptButtonBounds);
     loadingOverlay.setBounds(screen);
 }
 
@@ -76,11 +89,30 @@ void CaveyAudioProcessorEditor::buttonClicked(juce::Button *buttonRef) {
         whenGenerateButtonClicked();
         return;
     }
+    if (buttonRef == &aiSetupButton) {
+        openAiSetupDialog();
+        return;
+    }
 
     std::optional<Parameter *> maybeParameterTuple = getParameterGroup(buttonRef);
     if (maybeParameterTuple.has_value()) {
         whenRemoveParameterButtonClicked(maybeParameterTuple.value());
     }
+}
+
+void CaveyAudioProcessorEditor::openAiSetupDialog() {
+    juce::DialogWindow::LaunchOptions options;
+    options.dialogTitle = "AI setup";
+    options.content.setOwned(new AiSetupComponent(audioProcessor, [this] {
+        updateGenerateButtonEnabledState();
+    }));
+    options.componentToCentreAround = this;
+    options.dialogBackgroundColour = getLookAndFeel().findColour(
+        juce::ResizableWindow::backgroundColourId);
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+    options.launchAsync();
 }
 
 void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
@@ -188,7 +220,9 @@ void CaveyAudioProcessorEditor::updateGenerateButtonEnabledState() {
     const juce::String promptText = promptEditor.getText();
     const bool hasPrompt = promptText.trim().isNotEmpty();
     const bool hasGeneratedParameter = audioProcessor.hasGeneratedParameter();
-    const bool shouldEnableGenerateButton = hasPrompt && !isLoading && !hasGeneratedParameter;
+    const bool hasSelectedModel = audioProcessor.hasSelectedOllamaModel();
+    const bool shouldEnableGenerateButton =
+        hasPrompt && !isLoading && !hasGeneratedParameter && hasSelectedModel;
 
     generateButton.setEnabled(shouldEnableGenerateButton);
 
@@ -196,6 +230,8 @@ void CaveyAudioProcessorEditor::updateGenerateButtonEnabledState() {
         generateButton.setTooltip({});
     } else if (hasGeneratedParameter) {
         generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_PARAMETER_EXISTS);
+    } else if (!hasSelectedModel) {
+        generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_MODEL_REQUIRED);
     } else if (!hasPrompt) {
         generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_EMPTY_PROMPT);
     } else {

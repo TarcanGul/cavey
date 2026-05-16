@@ -65,6 +65,35 @@ bool HasFiniteSamples(const juce::AudioBuffer<float>& buffer) {
 
 }  // namespace
 
+TEST_CASE("Selected Ollama model is saved and read from settings", "[processor]") {
+    CaveyAudioProcessor processor;
+    processor.setSelectedOllamaModel({});
+
+    REQUIRE(processor.getSelectedOllamaModel().isEmpty());
+
+    processor.setSelectedOllamaModel("llama3.2:latest");
+
+    CaveyAudioProcessor otherProcessor;
+    REQUIRE(otherProcessor.getSelectedOllamaModel() == "llama3.2:latest");
+
+    otherProcessor.setSelectedOllamaModel({});
+}
+
+TEST_CASE("Generate path uses the generic LLM prompt interface", "[processor]") {
+    CaveyAudioProcessor processor(MakeMockController());
+
+    processor.addCaveyParameter("make it warm");
+
+    REQUIRE(processor.hasGeneratedParameter());
+}
+
+TEST_CASE("Ollama generation requires a selected model", "[processor]") {
+    CaveyAudioProcessor processor;
+    processor.setSelectedOllamaModel({});
+
+    REQUIRE_THROWS_AS(processor.addCaveyParameter("make it warm"), std::invalid_argument);
+}
+
 TEST_CASE("Generated parameters are created from LLM responses", "[processor]") {
     CaveyAudioProcessor processor(MakeMockController());
 

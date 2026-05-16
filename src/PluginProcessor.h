@@ -53,6 +53,10 @@ public:
     bool hasGeneratedParameter() const noexcept;
     juce::String getGeneratedParameterName() const;
     void clearGeneratedParameter() noexcept;
+    juce::StringArray fetchOllamaModels();
+    juce::String getSelectedOllamaModel() const;
+    void setSelectedOllamaModel(const juce::String& model);
+    bool hasSelectedOllamaModel() const;
 private:
     // TODO: Maybe a struct instead of `const std::map<Cavey::BaseEffect, float>& coefficients`?
     void addBackendParameter(const juce::String& parameterName, const std::map<Cavey::BaseEffect, float>& coefficients);
