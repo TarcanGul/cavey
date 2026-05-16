@@ -50,6 +50,7 @@ target_sources(CaveyPlugin PRIVATE
     src/PluginProcessor.cpp
     src/PluginEditor.cpp
     src/types/BackendParameter.cpp
+    src/components/CaveyLookAndFeel.cpp
     src/components/Parameter.cpp
     src/components/LoadingComponent.cpp
     src/components/AiSetupComponent.cpp
@@ -105,6 +106,7 @@ add_executable(CaveyTests
     src/PluginProcessor.cpp
     src/PluginEditor.cpp
     src/types/BackendParameter.cpp
+    src/components/CaveyLookAndFeel.cpp
     src/components/Parameter.cpp
     src/components/LoadingComponent.cpp
     src/components/AiSetupComponent.cpp

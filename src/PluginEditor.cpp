@@ -6,6 +6,8 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
     juce::Logger::writeToLog("Editor is starting...");
+    setLookAndFeel(&lookAndFeel_);
+    juce::LookAndFeel::setDefaultLookAndFeel(&lookAndFeel_);
 
     setSize(CaveyUI::INIT_SCREEN_WIDTH, CaveyUI::INIT_SCREEN_HEIGHT);
     setResizeLimits(
@@ -28,6 +30,7 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
 
     aiSetupButton.setButtonText(CaveyUI::AI_SETUP_BUTTON_TEXT);
     aiSetupButton.setTooltip("Configure Ollama model");
+    aiSetupButton.setMouseCursor(juce::MouseCursor::PointingHandCursor);
     aiSetupButton.addListener(this);
 
     selectedModelIndicator.setJustificationType(juce::Justification::centred);
@@ -37,6 +40,7 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     updateSelectedModelIndicator();
 
     generateButton.setButtonText(CaveyUI::GENERATE_BUTTON_TEXT);
+    generateButton.setMouseCursor(juce::MouseCursor::PointingHandCursor);
     generateButton.addListener(this);
     updateGenerateButtonEnabledState();
 
@@ -58,6 +62,8 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
 }
 
 CaveyAudioProcessorEditor::~CaveyAudioProcessorEditor() {
+    setLookAndFeel(nullptr);
+    juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     aiSetupButton.removeListener(this);
     generateButton.removeListener(this);
     promptEditor.onTextChange = nullptr;

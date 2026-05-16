@@ -36,10 +36,12 @@ AiSetupComponent::AiSetupComponent(
     addAndMakeVisible(modelComboBox_);
 
     refreshButton_.setButtonText("Refresh");
+    refreshButton_.setMouseCursor(juce::MouseCursor::PointingHandCursor);
     refreshButton_.onClick = [this] { refreshModels(); };
     addAndMakeVisible(refreshButton_);
 
     selectButton_.setButtonText("Select");
+    selectButton_.setMouseCursor(juce::MouseCursor::PointingHandCursor);
     selectButton_.onClick = [this] {
         saveSelectedModel();
         if (auto * dialogWindow = findParentComponentOfClass<juce::DialogWindow>()) {

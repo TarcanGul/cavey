@@ -20,6 +20,7 @@ Parameter::Parameter(const juce::String& name, juce::AudioProcessorValueTreeStat
     slider_->setName(name);
 
     removeButton_->setButtonText("Remove Parameter");
+    removeButton_->setMouseCursor(juce::MouseCursor::PointingHandCursor);
 
     addAndMakeVisible(slider_.get());
     addAndMakeVisible(label_.get());

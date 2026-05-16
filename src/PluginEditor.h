@@ -5,6 +5,7 @@
 #include <iterator>
 #include <utility>
 #include "components/AiSetupComponent.h"
+#include "components/CaveyLookAndFeel.h"
 #include "components/Parameter.h"
 #include "components/LoadingComponent.h"
 
@@ -81,6 +82,7 @@ private:
 
     std::optional<Parameter *> getParameterGroup(Button * buttonRef);
     CaveyAudioProcessor& audioProcessor;
+    CaveyLookAndFeel lookAndFeel_;
     Label mainLabel;
     TextEditor promptEditor;
     TextButton aiSetupButton;
