@@ -10,6 +10,10 @@ Parameter::Parameter(const juce::String& name, juce::AudioProcessorValueTreeStat
     label_->setText("unnamed", NotificationType::dontSendNotification);
 
     slider_->setSliderStyle(juce::Slider::SliderStyle::Rotary);
+    slider_->setRotaryParameters(
+        juce::degreesToRadians(240.0f),
+        juce::degreesToRadians(480.0f),
+        true);
     slider_->setTextBoxStyle(
         juce::Slider::TextBoxBelow,
         false,

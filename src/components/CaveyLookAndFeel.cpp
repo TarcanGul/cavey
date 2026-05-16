@@ -106,10 +106,12 @@ void CaveyLookAndFeel::drawRotarySlider(juce::Graphics& graphics, int x, int y,
 
   const float indicatorLength = radius * 0.68f;
   const float indicatorStart = radius * 0.18f;
-  juce::Line<float> indicator(centre.x + std::cos(angle) * indicatorStart,
-                              centre.y + std::sin(angle) * indicatorStart,
-                              centre.x + std::cos(angle) * indicatorLength,
-                              centre.y + std::sin(angle) * indicatorLength);
+  const float indicatorAngle = angle - juce::MathConstants<float>::halfPi;
+  juce::Line<float> indicator(
+      centre.x + std::cos(indicatorAngle) * indicatorStart,
+      centre.y + std::sin(indicatorAngle) * indicatorStart,
+      centre.x + std::cos(indicatorAngle) * indicatorLength,
+      centre.y + std::sin(indicatorAngle) * indicatorLength);
   const juce::Line<float> indicatorShadow(
       indicator.getStartX() + 1.0f, indicator.getStartY() + 1.0f,
       indicator.getEndX() + 1.0f, indicator.getEndY() + 1.0f);
