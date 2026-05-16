@@ -10,6 +10,11 @@ Parameter::Parameter(const juce::String& name, juce::AudioProcessorValueTreeStat
     label_->setText("unnamed", NotificationType::dontSendNotification);
 
     slider_->setSliderStyle(juce::Slider::SliderStyle::Rotary);
+    slider_->setTextBoxStyle(
+        juce::Slider::TextBoxBelow,
+        false,
+        SLIDER_VALUE_TEXT_WIDTH,
+        SLIDER_VALUE_TEXT_HEIGHT);
     slider_->setRange(0, 1, 0.01);
     slider_->setValue(0);
     slider_->setName(name);
@@ -36,12 +41,12 @@ void Parameter::setRemoveButtonListener(Button::Listener * listener) {
 void Parameter::resized() {
     auto componentBounds = getLocalBounds();
     label_->setBounds(componentBounds.removeFromLeft(LABEL_WIDTH));
-    slider_->setBounds(componentBounds);
     auto removeButtonBounds = componentBounds
                                       .removeFromRight(REMOVE_BUTTON_WIDTH)
                                       .reduced(REMOVE_BUTTON_HORIZONTAL_PADDING, 0);
     removeButtonBounds.removeFromTop(REMOVE_BUTTON_TOP_PADDING);
     removeButton_->setBounds(removeButtonBounds);
+    slider_->setBounds(componentBounds);
 }
 
 void Parameter::setLabel(const juce::String& label) {

@@ -16,8 +16,21 @@ namespace CaveyUI {
     static constexpr int AI_SETUP_BUTTON_GAP = 6;
     static constexpr int AI_SETUP_BUTTON_HEIGHT = 28;
     static constexpr int SELECTED_MODEL_INDICATOR_HEIGHT = 44;
+    static constexpr int MIN_GENERATE_BUTTON_WIDTH = PROMPT_WIDTH - 2 * MARGIN_EXTRA_SMALL;
+    static constexpr int MIN_GENERATE_BUTTON_HEIGHT = AI_SETUP_BUTTON_HEIGHT;
+    static constexpr int MIN_PROMPT_HEIGHT =
+        2 * MARGIN_SMALL + AI_SETUP_BUTTON_HEIGHT + SELECTED_MODEL_INDICATOR_HEIGHT
+        + AI_SETUP_BUTTON_GAP + MIN_GENERATE_BUTTON_HEIGHT;
     static constexpr int INIT_SCREEN_WIDTH = 600;
     static constexpr int INIT_SCREEN_HEIGHT = 400;
+    static constexpr int MIN_PROMPT_EDITOR_WIDTH =
+        (INIT_SCREEN_WIDTH - PROMPT_WIDTH - 2 * MARGIN_SMALL) / 2;
+    static constexpr int MIN_SCREEN_WIDTH =
+            MIN_PROMPT_EDITOR_WIDTH + PROMPT_WIDTH + 2 * MARGIN_SMALL;
+    static constexpr int MIN_SCREEN_HEIGHT =
+            (3 * INIT_SCREEN_HEIGHT) / 4;
+    static constexpr int MAX_SCREEN_WIDTH = 32000;
+    static constexpr int MAX_SCREEN_HEIGHT = 32000;
     static constexpr int MAX_PARAMETER_AMOUNT = 1;
 
     static constexpr size_t KNOB_INIT_Y_POS = 100L;

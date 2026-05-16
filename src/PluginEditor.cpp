@@ -8,11 +8,18 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     juce::Logger::writeToLog("Editor is starting...");
 
     setSize(CaveyUI::INIT_SCREEN_WIDTH, CaveyUI::INIT_SCREEN_HEIGHT);
+    setResizeLimits(
+        CaveyUI::MIN_SCREEN_WIDTH,
+        CaveyUI::MIN_SCREEN_HEIGHT,
+        CaveyUI::MAX_SCREEN_WIDTH,
+        CaveyUI::MAX_SCREEN_HEIGHT);
     setResizable(true, true);
 
     // Create the parameter area that first be a text box.
     mainLabel.setText(CaveyUI::MAIN_LABEL_TEXT, NotificationType::dontSendNotification);
     mainLabel.setEditable(false);
+    mainLabel.setJustificationType(juce::Justification::centred);
+    mainLabel.setMinimumHorizontalScale(1.0f);
 
     promptEditor.setTextToShowWhenEmpty(CaveyUI::PROMPT_PLACEHOLDER_TEXT, Colours::grey.withAlpha(.6f));
     promptEditor.onTextChange = [this] {
@@ -67,12 +74,16 @@ void CaveyAudioProcessorEditor::paint(juce::Graphics& g)
 
 void CaveyAudioProcessorEditor::resized() {
     auto screen = getLocalBounds();
-    auto promptBounds = screen.removeFromBottom(CaveyUI::PROMPT_HEIGHT);
+    const int promptHeight = juce::jlimit(
+        CaveyUI::MIN_PROMPT_HEIGHT,
+        CaveyUI::PROMPT_HEIGHT,
+        getHeight() / 2);
+    auto promptBounds = screen.removeFromBottom(promptHeight);
     auto buttonBounds = promptBounds.removeFromRight(CaveyUI::PROMPT_WIDTH);
 
     if (parameterKnobs.empty()) {
         mainLabel.setVisible(true);
-        mainLabel.setBounds(screen.withSizeKeepingCentre(juce::GlyphArrangement::getStringWidthInt(mainLabel.getFont(), CaveyUI::MAIN_LABEL_TEXT), 20));
+        mainLabel.setBounds(screen.reduced(CaveyUI::MARGIN_SMALL));
     } else {
         renderParameterKnobs();
     }
@@ -85,7 +96,10 @@ void CaveyAudioProcessorEditor::resized() {
     selectedModelIndicator.setBounds(
         promptButtonBounds.removeFromTop(CaveyUI::SELECTED_MODEL_INDICATOR_HEIGHT));
     promptButtonBounds.removeFromTop(CaveyUI::AI_SETUP_BUTTON_GAP);
-    generateButton.setBounds(promptButtonBounds);
+    generateButton.setBounds(
+        promptButtonBounds.withSizeKeepingCentre(
+            juce::jmax(promptButtonBounds.getWidth(), CaveyUI::MIN_GENERATE_BUTTON_WIDTH),
+            juce::jmax(promptButtonBounds.getHeight(), CaveyUI::MIN_GENERATE_BUTTON_HEIGHT)));
     loadingOverlay.setBounds(screen);
 }
 

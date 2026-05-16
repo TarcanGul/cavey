@@ -27,6 +27,8 @@ private:
     static constexpr int REMOVE_BUTTON_HORIZONTAL_PADDING = 10;
     static constexpr int REMOVE_BUTTON_TOP_PADDING = 10;
     static constexpr int LABEL_WIDTH = 100;
+    static constexpr int SLIDER_VALUE_TEXT_WIDTH = 60;
+    static constexpr int SLIDER_VALUE_TEXT_HEIGHT = 18;
 
     std::unique_ptr<Label> label_;
     std::unique_ptr<Slider> slider_;
