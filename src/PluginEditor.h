@@ -14,6 +14,8 @@ namespace CaveyUI {
     static constexpr int PROMPT_WIDTH = 100;
     static constexpr int PROMPT_HEIGHT = 200;
     static constexpr int AI_SETUP_BUTTON_GAP = 6;
+    static constexpr int AI_SETUP_BUTTON_HEIGHT = 28;
+    static constexpr int SELECTED_MODEL_INDICATOR_HEIGHT = 44;
     static constexpr int INIT_SCREEN_WIDTH = 600;
     static constexpr int INIT_SCREEN_HEIGHT = 400;
     static constexpr int MAX_PARAMETER_AMOUNT = 1;
@@ -30,6 +32,8 @@ namespace CaveyUI {
     static constexpr const char * GENERATE_TOOLTIP_LOADING = "Generating parameter...";
     static constexpr const char * GENERATE_TOOLTIP_MODEL_REQUIRED = "Select an Ollama model in AI setup first.";
     static constexpr const char * AI_SETUP_BUTTON_TEXT = "Set up your AI";
+    static constexpr const char * AI_PROVIDER_TEXT = "Ollama";
+    static constexpr const char * NO_AI_MODEL_SELECTED_TEXT = "No model selected";
 }
 
 class CaveyAudioProcessor;
@@ -60,12 +64,14 @@ private:
 
     void setLoading(bool desiredLoadingState);
     void updateGenerateButtonEnabledState();
+    void updateSelectedModelIndicator();
 
     std::optional<Parameter *> getParameterGroup(Button * buttonRef);
     CaveyAudioProcessor& audioProcessor;
     Label mainLabel;
     TextEditor promptEditor;
     TextButton aiSetupButton;
+    Label selectedModelIndicator;
     TextButton generateButton;
     TooltipWindow tooltipWindow;
 

@@ -23,6 +23,12 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     aiSetupButton.setTooltip("Configure Ollama model");
     aiSetupButton.addListener(this);
 
+    selectedModelIndicator.setJustificationType(juce::Justification::centred);
+    selectedModelIndicator.setFont(selectedModelIndicator.getFont().withHeight(12.0f));
+    selectedModelIndicator.setMinimumHorizontalScale(0.6f);
+    selectedModelIndicator.setColour(juce::Label::textColourId, juce::Colours::grey);
+    updateSelectedModelIndicator();
+
     generateButton.setButtonText(CaveyUI::GENERATE_BUTTON_TEXT);
     generateButton.addListener(this);
     updateGenerateButtonEnabledState();
@@ -30,6 +36,7 @@ CaveyAudioProcessorEditor::CaveyAudioProcessorEditor(CaveyAudioProcessor& p)
     addAndMakeVisible(&mainLabel);
     addAndMakeVisible(&promptEditor);
     addAndMakeVisible(&aiSetupButton);
+    addAndMakeVisible(&selectedModelIndicator);
     addAndMakeVisible(&generateButton);
     addChildComponent(&loadingOverlay);
     loadingOverlay.setVisible(false);
@@ -73,11 +80,10 @@ void CaveyAudioProcessorEditor::resized() {
     // Divide the bottom prompt area between the text editor and prompt controls.
     promptEditor.setBounds(promptBounds.reduced(CaveyUI::MARGIN_SMALL));
     auto promptButtonBounds = buttonBounds.reduced(CaveyUI::MARGIN_EXTRA_SMALL, CaveyUI::MARGIN_SMALL);
-    const int combinedButtonHeight =
-        promptButtonBounds.getHeight() - CaveyUI::AI_SETUP_BUTTON_GAP;
-    const int aiSetupButtonHeight = combinedButtonHeight / 4;
 
-    aiSetupButton.setBounds(promptButtonBounds.removeFromTop(aiSetupButtonHeight));
+    aiSetupButton.setBounds(promptButtonBounds.removeFromTop(CaveyUI::AI_SETUP_BUTTON_HEIGHT));
+    selectedModelIndicator.setBounds(
+        promptButtonBounds.removeFromTop(CaveyUI::SELECTED_MODEL_INDICATOR_HEIGHT));
     promptButtonBounds.removeFromTop(CaveyUI::AI_SETUP_BUTTON_GAP);
     generateButton.setBounds(promptButtonBounds);
     loadingOverlay.setBounds(screen);
@@ -104,6 +110,7 @@ void CaveyAudioProcessorEditor::openAiSetupDialog() {
     juce::DialogWindow::LaunchOptions options;
     options.dialogTitle = "AI setup";
     options.content.setOwned(new AiSetupComponent(audioProcessor, [this] {
+        updateSelectedModelIndicator();
         updateGenerateButtonEnabledState();
     }));
     options.componentToCentreAround = this;
@@ -237,4 +244,15 @@ void CaveyAudioProcessorEditor::updateGenerateButtonEnabledState() {
     } else {
         generateButton.setTooltip(CaveyUI::GENERATE_TOOLTIP_LOADING);
     }
+}
+
+void CaveyAudioProcessorEditor::updateSelectedModelIndicator() {
+    const juce::String selectedModel = audioProcessor.getSelectedOllamaModel();
+    const juce::String modelText = selectedModel.isNotEmpty()
+        ? selectedModel
+        : CaveyUI::NO_AI_MODEL_SELECTED_TEXT;
+
+    selectedModelIndicator.setText(
+        juce::String(CaveyUI::AI_PROVIDER_TEXT) + "\n" + modelText,
+        juce::NotificationType::dontSendNotification);
 }
