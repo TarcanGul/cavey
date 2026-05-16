@@ -1,7 +1,17 @@
-Cavey JUCE Plugin (CMake)
+Cavey Plugin
 ================================
 
-Minimal cross‑platform JUCE audio plugin using CMake.
+Cross‑platform audio plugin that allows you to generate your own audio effects via prompting!
+
+<img width="624" height="443" alt="Screenshot 2026-05-16 at 3 44 05 PM" src="https://github.com/user-attachments/assets/f9f512f4-c583-41bd-b933-6e8fe660c51e" />
+
+<img width="399" height="282" alt="Screenshot 2026-05-16 at 3 44 13 PM" src="https://github.com/user-attachments/assets/bd7fbdbe-7b1b-4d8e-84c7-346bff1c7ecd" />
+
+<img width="650" height="454" alt="Screenshot 2026-05-16 at 3 44 42 PM" src="https://github.com/user-attachments/assets/e5d2a927-4c4e-4971-8805-e9741d4f9b04" />
+
+
+I took [this youtube video](https://www.youtube.com/watch?v=X1b7K0RUHos) in the prototype phase.
+
 
 Prerequisites
 -------------
