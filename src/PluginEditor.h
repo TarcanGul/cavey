@@ -29,7 +29,7 @@ namespace CaveyUI {
     static constexpr const char * GENERATE_TOOLTIP_EMPTY_PROMPT = "Enter a prompt to generate.";
     static constexpr const char * GENERATE_TOOLTIP_LOADING = "Generating parameter...";
     static constexpr const char * GENERATE_TOOLTIP_MODEL_REQUIRED = "Select an Ollama model in AI setup first.";
-    static constexpr const char * AI_SETUP_BUTTON_TEXT = "AI";
+    static constexpr const char * AI_SETUP_BUTTON_TEXT = "Set up your AI";
 }
 
 class CaveyAudioProcessor;
