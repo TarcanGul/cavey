@@ -1,9 +1,102 @@
 #include "PluginProcessor.h"
 
-#include <utility>
-#include "PluginEditor.h"
 #include <cmath>
+#include <optional>
+#include <utility>
+
+#include "PluginEditor.h"
 #include "controllers/OllamaController.h"
+
+namespace {
+
+GenerateParameterResult MakeGenerationFailure(const juce::String& errorMessage) {
+    juce::Logger::writeToLog("Parameter generation failed: " + errorMessage);
+    return {
+        .success = false,
+        .parameterName = {},
+        .errorMessage = errorMessage
+    };
+}
+
+std::optional<float> ReadJsonNumber(const boost::json::value& value) {
+    if (value.is_double()) {
+        return static_cast<float>(value.as_double());
+    }
+
+    if (value.is_int64()) {
+        return static_cast<float>(value.as_int64());
+    }
+
+    if (value.is_uint64()) {
+        return static_cast<float>(value.as_uint64());
+    }
+
+    return std::nullopt;
+}
+
+std::optional<juce::String> ReadRequiredString(
+    const boost::json::object& object,
+    const char* fieldName,
+    juce::String* errorMessage) {
+    const auto field = object.find(fieldName);
+    if (field == object.end()) {
+        *errorMessage = juce::String("LLM response missing required field: ") + fieldName;
+        return std::nullopt;
+    }
+
+    if (!field->value().is_string()) {
+        *errorMessage = juce::String("LLM response field must be a string: ") + fieldName;
+        return std::nullopt;
+    }
+
+    const juce::String stringValue(field->value().as_string().c_str());
+    if (stringValue.trim().isEmpty()) {
+        *errorMessage = juce::String("LLM response field cannot be empty: ") + fieldName;
+        return std::nullopt;
+    }
+
+    return stringValue;
+}
+
+std::optional<float> ReadRequiredNumber(
+    const boost::json::object& object,
+    const char* fieldName,
+    juce::String* errorMessage) {
+    const auto field = object.find(fieldName);
+    if (field == object.end()) {
+        *errorMessage = juce::String("LLM response missing required field: ") + fieldName;
+        return std::nullopt;
+    }
+
+    const auto number = ReadJsonNumber(field->value());
+    if (!number.has_value()) {
+        *errorMessage = juce::String("LLM response field must be numeric: ") + fieldName;
+        return std::nullopt;
+    }
+
+    return number;
+}
+
+std::optional<float> ReadOptionalNumber(
+    const boost::json::object& object,
+    const char* fieldName,
+    float defaultValue,
+    juce::String* errorMessage) {
+    const auto field = object.find(fieldName);
+    if (field == object.end()) {
+        return defaultValue;
+    }
+
+    const auto number = ReadJsonNumber(field->value());
+    if (!number.has_value()) {
+        *errorMessage = juce::String("LLM response field must be numeric: ") + fieldName;
+        return std::nullopt;
+    }
+
+    return number;
+}
+
+}  // namespace
 
 CaveyAudioProcessor::CaveyAudioProcessor()
     : CaveyAudioProcessor(std::make_unique<OllamaController>())
@@ -197,25 +290,78 @@ void CaveyAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
     juce::ignoreUnused(data, sizeInBytes);
 }
 
-void CaveyAudioProcessor::addCaveyParameter(const juce::String& prompt) {
-    // Do this part async
-    const juce::String response = this->llm_->prompt(prompt);
+GenerateParameterResult CaveyAudioProcessor::addCaveyParameter(const juce::String& prompt) {
+    try {
+        const juce::String response = this->llm_->prompt(prompt);
 
-    boost::system::error_code errorCode;
-    const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
-    const boost::json::object parsedResponse = readResponse.as_object();
-    juce::String parameterName = juce::String(parsedResponse.at("NAME").get_string().c_str());
+        boost::system::error_code errorCode;
+        const boost::json::value readResponse = boost::json::parse(response.toStdString(), errorCode);
+        if (errorCode) {
+            return MakeGenerationFailure(
+                "LLM response is invalid JSON: " + juce::String(errorCode.message()));
+        }
 
-    this->addBackendParameter( parameterName, {
-            { Cavey::BaseEffect::VOLUME, parsedResponse.at("VOLUME").get_double() },
-            { Cavey::BaseEffect::LOW_PASS, parsedResponse.at("LOW_PASS").get_double() },
-            { Cavey::BaseEffect::HIGH_PASS, parsedResponse.at("HIGH_PASS").get_double() },
-            { Cavey::BaseEffect::REVERB, parsedResponse.at("REVERB").get_double() },
-            { Cavey::BaseEffect::DISTORTION, parsedResponse.at("DISTORTION").get_double()},
-            { Cavey::BaseEffect::CHORUS, parsedResponse.contains("CHORUS") ? parsedResponse.at("CHORUS").get_double() : 0.0}
-    });
+        if (!readResponse.is_object()) {
+            return MakeGenerationFailure("LLM response must be a JSON object.");
+        }
 
-    sendActionMessage(parameterName);
+        const boost::json::object& parsedResponse = readResponse.as_object();
+        juce::String errorMessage;
+        const auto parameterName = ReadRequiredString(parsedResponse, "NAME", &errorMessage);
+        if (!parameterName.has_value()) {
+            return MakeGenerationFailure(errorMessage);
+        }
+
+        const auto volume = ReadRequiredNumber(parsedResponse, "VOLUME", &errorMessage);
+        if (!volume.has_value()) {
+            return MakeGenerationFailure(errorMessage);
+        }
+
+        const auto lowPass = ReadRequiredNumber(parsedResponse, "LOW_PASS", &errorMessage);
+        if (!lowPass.has_value()) {
+            return MakeGenerationFailure(errorMessage);
+        }
+
+        const auto highPass = ReadRequiredNumber(parsedResponse, "HIGH_PASS", &errorMessage);
+        if (!highPass.has_value()) {
+            return MakeGenerationFailure(errorMessage);
+        }
+
+        const auto reverb = ReadRequiredNumber(parsedResponse, "REVERB", &errorMessage);
+        if (!reverb.has_value()) {
+            return MakeGenerationFailure(errorMessage);
+        }
+
+        const auto distortion = ReadRequiredNumber(parsedResponse, "DISTORTION", &errorMessage);
+        if (!distortion.has_value()) {
+            return MakeGenerationFailure(errorMessage);
+        }
+
+        const auto chorus = ReadOptionalNumber(parsedResponse, "CHORUS", 0.0f, &errorMessage);
+        if (!chorus.has_value()) {
+            return MakeGenerationFailure(errorMessage);
+        }
+
+        this->addBackendParameter(*parameterName, {
+            { Cavey::BaseEffect::VOLUME, *volume },
+            { Cavey::BaseEffect::LOW_PASS, *lowPass },
+            { Cavey::BaseEffect::HIGH_PASS, *highPass },
+            { Cavey::BaseEffect::REVERB, *reverb },
+            { Cavey::BaseEffect::DISTORTION, *distortion },
+            { Cavey::BaseEffect::CHORUS, *chorus }
+        });
+
+        sendActionMessage(*parameterName);
+        return {
+            .success = true,
+            .parameterName = *parameterName,
+            .errorMessage = {}
+        };
+    } catch (const std::exception& exception) {
+        return MakeGenerationFailure(exception.what());
+    } catch (...) {
+        return MakeGenerationFailure("Unknown generation error.");
+    }
 }
 
 juce::AudioProcessorValueTreeState& CaveyAudioProcessor::getValueTree() {

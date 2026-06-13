@@ -152,10 +152,53 @@ void CaveyAudioProcessorEditor::whenGenerateButtonClicked() {
     updateGenerateButtonEnabledState();
 
     const juce::String prompt = promptEditor.getText();
+    juce::Component::SafePointer<CaveyAudioProcessorEditor> safeThis(this);
+    CaveyAudioProcessor* processor = &audioProcessor;
 
-    std::thread([this, p = prompt] {
-        audioProcessor.addCaveyParameter(p);
-        juce::Logger::writeToLog("Prompt sent as action message");
+    std::thread([safeThis, processor, p = prompt] {
+        GenerateParameterResult result;
+
+        try {
+            result = processor->addCaveyParameter(p);
+        } catch (const std::exception& exception) {
+            result = {
+                .success = false,
+                .parameterName = {},
+                .errorMessage = exception.what()
+            };
+            juce::Logger::writeToLog("Generation worker failed: " + result.errorMessage);
+        } catch (...) {
+            result = {
+                .success = false,
+                .parameterName = {},
+                .errorMessage = "Unknown generation error."
+            };
+            juce::Logger::writeToLog("Generation worker failed with an unknown error.");
+        }
+
+        if (result.success) {
+            juce::Logger::writeToLog("Prompt sent as action message");
+        }
+
+        juce::MessageManager::callAsync([safeThis, result] {
+            if (safeThis == nullptr) {
+                return;
+            }
+
+            safeThis->setLoading(false);
+
+            if (!result.success) {
+                const juce::String errorMessage = result.errorMessage.isNotEmpty()
+                    ? result.errorMessage
+                    : "Generation failed.";
+                safeThis->mainLabel.setText(
+                    "Generation failed: " + errorMessage,
+                    juce::NotificationType::dontSendNotification);
+                safeThis->mainLabel.setVisible(true);
+            }
+
+            safeThis->updateGenerateButtonEnabledState();
+        });
     }).detach();
 }
 
@@ -218,9 +261,14 @@ void CaveyAudioProcessorEditor::actionListenerCallback(const juce::String &messa
 
     juce::Logger::writeToLog("Parameter is added via the callback");
 
-    juce::MessageManager::callAsync([this, parameterName] {
-        setLoading(false);
-        addParameterControl(parameterName);
+    juce::Component::SafePointer<CaveyAudioProcessorEditor> safeThis(this);
+    juce::MessageManager::callAsync([safeThis, parameterName] {
+        if (safeThis == nullptr) {
+            return;
+        }
+
+        safeThis->setLoading(false);
+        safeThis->addParameterControl(parameterName);
     });
 }
 
