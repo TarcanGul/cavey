@@ -5,6 +5,7 @@
 
 ## Development Flow
 
+- This project uses git flow. `develop` is the development branch where the new work goes. The work then merge to `main` for release.
 - I like to use the AudioPluginHost JUCE plugin that comes bundled with JUCE. This allows fast iteration.
 
 ## Logs
