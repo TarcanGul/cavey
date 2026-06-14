@@ -5,9 +5,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(CaveyPlugin VERSION 0.1.0)
-add_compile_options(-Wall -Wextra -Wpedantic)
 
 option(CAVEY_ENABLE_COVERAGE "Enable LLVM coverage reporting for CaveyTests" OFF)
+
+function(cavey_source_compile_warnings)
+    if(MSVC)
+        set_source_files_properties(${ARGN} PROPERTIES COMPILE_OPTIONS /W4)
+    else()
+        set_source_files_properties(
+            ${ARGN}
+            PROPERTIES COMPILE_OPTIONS "-Wall;-Wextra;-Wpedantic"
+        )
+    endif()
+endfunction()
 
 # Dependencies
 
@@ -28,6 +38,26 @@ endif()
 
 find_package(Boost 1.89 REQUIRED COMPONENTS json)
 
+set(CAVEY_SOURCE_FILES
+    src/PluginProcessor.cpp
+    src/PluginEditor.cpp
+    src/types/BackendParameter.cpp
+    src/components/CaveyLookAndFeel.cpp
+    src/components/Parameter.cpp
+    src/components/LoadingComponent.cpp
+    src/components/AiSetupComponent.cpp
+    src/controllers/OllamaController.cpp
+    src/effects/CaveyEffects.cpp
+)
+
+set(CAVEY_TEST_SOURCE_FILES
+    test/effects/CaveyEffectsTests.cpp
+    test/types/BackendParameterTests.cpp
+    test/PluginProcessorTests.cpp
+)
+
+cavey_source_compile_warnings(${CAVEY_SOURCE_FILES} ${CAVEY_TEST_SOURCE_FILES})
+
 # Create the plugin target
 juce_add_plugin(CaveyPlugin
     COMPANY_NAME "TarcanGul"
@@ -47,15 +77,7 @@ juce_add_plugin(CaveyPlugin
 juce_generate_juce_header(CaveyPlugin)
 
 target_sources(CaveyPlugin PRIVATE
-    src/PluginProcessor.cpp
-    src/PluginEditor.cpp
-    src/types/BackendParameter.cpp
-    src/components/CaveyLookAndFeel.cpp
-    src/components/Parameter.cpp
-    src/components/LoadingComponent.cpp
-    src/components/AiSetupComponent.cpp
-    src/controllers/OllamaController.cpp
-    src/effects/CaveyEffects.cpp
+    ${CAVEY_SOURCE_FILES}
 
     src/controllers/SystemPrompt.md
 )
@@ -100,18 +122,8 @@ FetchContent_MakeAvailable(Catch2)
 enable_testing()
 
 add_executable(CaveyTests
-    test/effects/CaveyEffectsTests.cpp
-    test/types/BackendParameterTests.cpp
-    test/PluginProcessorTests.cpp
-    src/PluginProcessor.cpp
-    src/PluginEditor.cpp
-    src/types/BackendParameter.cpp
-    src/components/CaveyLookAndFeel.cpp
-    src/components/Parameter.cpp
-    src/components/LoadingComponent.cpp
-    src/components/AiSetupComponent.cpp
-    src/controllers/OllamaController.cpp
-    src/effects/CaveyEffects.cpp
+    ${CAVEY_TEST_SOURCE_FILES}
+    ${CAVEY_SOURCE_FILES}
 )
 
 target_include_directories(CaveyTests
