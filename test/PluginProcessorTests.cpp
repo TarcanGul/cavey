@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "PluginProcessor.h"
+#include "controllers/OllamaController.h"
 
 namespace {
 
@@ -50,6 +51,54 @@ std::unique_ptr<MockLLMController> MakeMockController(
     return std::make_unique<MockLLMController>(std::move(response));
 }
 
+juce::PropertiesFile::Options MakeTestSettingsOptions() {
+    juce::PropertiesFile::Options options;
+    options.applicationName = "CaveyTest";
+    options.filenameSuffix = "settings";
+    options.folderName = "CaveyTests";
+    options.osxLibrarySubFolder = "Application Support";
+    options.storageFormat = juce::PropertiesFile::storeAsXML;
+    options.millisecondsBeforeSaving = 0;
+    return options;
+}
+
+class ScopedTestSettingsFile {
+public:
+    ScopedTestSettingsFile()
+        : options_(MakeTestSettingsOptions()),
+          directory_(juce::File::getCurrentWorkingDirectory()
+                         .getChildFile("CaveyTestSettings")
+                         .getChildFile(juce::Uuid().toString())),
+          settingsFile_(directory_.getChildFile("CaveyTest.settings")) {
+        directory_.deleteRecursively();
+        directory_.createDirectory();
+    }
+
+    ~ScopedTestSettingsFile() {
+        directory_.deleteRecursively();
+    }
+
+    const juce::PropertiesFile::Options& options() const {
+        return options_;
+    }
+
+    const juce::File& settingsFile() const {
+        return settingsFile_;
+    }
+
+private:
+    juce::PropertiesFile::Options options_;
+    juce::File directory_;
+    juce::File settingsFile_;
+};
+
+std::unique_ptr<OllamaController> MakeTestOllamaController(
+    const ScopedTestSettingsFile& settingsFile) {
+    return std::make_unique<OllamaController>(
+        settingsFile.settingsFile(),
+        settingsFile.options());
+}
+
 bool BuffersMatch(const juce::AudioBuffer<float>& first,
                   const juce::AudioBuffer<float>& second) {
     if (first.getNumChannels() != second.getNumChannels()
@@ -83,14 +132,22 @@ bool HasFiniteSamples(const juce::AudioBuffer<float>& buffer) {
 }  // namespace
 
 TEST_CASE("Selected Ollama model is saved and read from settings", "[processor]") {
-    CaveyAudioProcessor processor;
-    processor.setSelectedOllamaModel({});
+    ScopedTestSettingsFile settingsFile;
 
-    REQUIRE(processor.getSelectedOllamaModel().isEmpty());
+    {
+        CaveyAudioProcessor processor(MakeTestOllamaController(settingsFile));
+        processor.setSelectedOllamaModel({});
 
-    processor.setSelectedOllamaModel("llama3.2:latest");
+        REQUIRE(processor.getSelectedOllamaModel().isEmpty());
 
-    CaveyAudioProcessor otherProcessor;
+        processor.setSelectedOllamaModel("llama3.2:latest");
+        REQUIRE(processor.getSelectedOllamaModel() == "llama3.2:latest");
+    }
+
+    INFO("Settings file: " + settingsFile.settingsFile().getFullPathName());
+    REQUIRE(settingsFile.settingsFile().existsAsFile());
+
+    CaveyAudioProcessor otherProcessor(MakeTestOllamaController(settingsFile));
     REQUIRE(otherProcessor.getSelectedOllamaModel() == "llama3.2:latest");
 
     otherProcessor.setSelectedOllamaModel({});

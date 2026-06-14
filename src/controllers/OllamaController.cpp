@@ -3,50 +3,57 @@
 //
 
 #include "OllamaController.h"
-#include <string>
+
 #include <regex>
+#include <string>
+#include <utility>
+
 #include <boost/algorithm/string/trim.hpp>
 
 namespace {
 
 constexpr const char* kOllamaModelSettingKey = "ollamaModel";
 
-juce::ApplicationProperties& GetApplicationProperties() {
-    static juce::ApplicationProperties properties;
-    static bool isConfigured = false;
-
-    if (!isConfigured) {
-        juce::PropertiesFile::Options options;
-        options.applicationName = "Cavey";
-        options.filenameSuffix = "settings";
-        options.folderName = "Cavey";
-        options.osxLibrarySubFolder = "Application Support";
-        options.storageFormat = juce::PropertiesFile::storeAsXML;
-        properties.setStorageParameters(options);
-        isConfigured = true;
-    }
-
-    return properties;
-}
-
-juce::PropertiesFile* GetUserSettings() {
-    return GetApplicationProperties().getUserSettings();
+juce::PropertiesFile::Options MakeDefaultStorageOptions() {
+    juce::PropertiesFile::Options options;
+    options.applicationName = "Cavey";
+    options.filenameSuffix = "settings";
+    options.folderName = "Cavey";
+    options.osxLibrarySubFolder = "Application Support";
+    options.storageFormat = juce::PropertiesFile::storeAsXML;
+    return options;
 }
 
 }  // namespace
 
-OllamaController::OllamaController() {
+OllamaController::OllamaController()
+    : OllamaController(MakeDefaultStorageOptions()) {}
+
+OllamaController::OllamaController(juce::PropertiesFile::Options storageOptions) {
+    settings_ = std::make_unique<juce::PropertiesFile>(std::move(storageOptions));
+    LoadSystemPromptAndSelectedModel();
+}
+
+OllamaController::OllamaController(
+    juce::File settingsFile,
+    juce::PropertiesFile::Options storageOptions) {
+    settings_ = std::make_unique<juce::PropertiesFile>(
+        std::move(settingsFile),
+        std::move(storageOptions));
+    LoadSystemPromptAndSelectedModel();
+}
+
+void OllamaController::LoadSystemPromptAndSelectedModel() {
     int dataSize = 0;
     const char * data = BinaryData::getNamedResource("SystemPrompt_md", dataSize);
     if (data && dataSize > 0) {
-        systemPrompt = data;
-        // systemPrompt.assign(data,  static_cast<size_t>(dataSize));
+        systemPrompt.assign(data, static_cast<size_t>(dataSize));
     } else {
         juce::Logger::writeToLog("Cannot read system prompt");
     }
 
-    if (const auto* settings = GetUserSettings()) {
-        selectedModel_ = settings->getValue(kOllamaModelSettingKey).trim();
+    if (settings_ != nullptr && settings_->isValidFile()) {
+        selectedModel_ = settings_->getValue(kOllamaModelSettingKey).trim();
     }
 }
 
@@ -190,9 +197,9 @@ juce::String OllamaController::getSelectedModel() const {
 
 void OllamaController::setSelectedModel(const juce::String& model) {
     selectedModel_ = model.trim();
-    if (auto* settings = GetUserSettings()) {
-        settings->setValue(kOllamaModelSettingKey, selectedModel_);
-        settings->saveIfNeeded();
+    if (settings_ != nullptr && settings_->isValidFile()) {
+        settings_->setValue(kOllamaModelSettingKey, selectedModel_);
+        settings_->saveIfNeeded();
     }
 }
 

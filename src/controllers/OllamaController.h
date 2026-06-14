@@ -13,6 +13,7 @@
 #include <boost/json.hpp>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <fstream>
 #include "LLMController.h"
@@ -35,10 +36,16 @@ private:
     static constexpr std::string_view OLLAMA_HOST = "localhost";
     static constexpr std::string_view OLLAMA_PORT = "11434";
 
+    void LoadSystemPromptAndSelectedModel();
+
     std::string systemPrompt {};
+    std::unique_ptr<juce::PropertiesFile> settings_;
     juce::String selectedModel_;
 public:
     explicit OllamaController();
+    explicit OllamaController(juce::PropertiesFile::Options storageOptions);
+    OllamaController(juce::File settingsFile,
+                     juce::PropertiesFile::Options storageOptions);
     String prompt(String const& prompt) override;
     juce::StringArray fetchModels();
     juce::String getSelectedModel() const;
