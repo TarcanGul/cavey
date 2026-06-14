@@ -53,6 +53,12 @@ jobs:
             mesa-common-dev \
             pkg-config
 
+      - name: Configure MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Configure vcpkg
         shell: pwsh
         run: |
